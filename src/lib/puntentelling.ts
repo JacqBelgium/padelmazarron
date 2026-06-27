@@ -1,7 +1,6 @@
 // ============================================================
 // Puntentelling — berekent punten uit set uitslagen
 // ============================================================
-import type { Set, Punt } from '@/types/database'
 
 export interface SetUitslag {
   setId: string
@@ -13,7 +12,7 @@ export interface SetUitslag {
   team2: { speler1Id: string; speler2Id: string }
   games_team1: number
   games_team2: number
-  invallers: Set<string>   // speler IDs die invaller zijn
+  invallers: string[]   // speler IDs die invaller zijn
 }
 
 export interface SpelerPunten {
@@ -26,11 +25,6 @@ export interface SpelerPunten {
   is_invaller: boolean
 }
 
-/**
- * Bereken punten voor alle spelers in een set
- * Elk gewonnen game = 1 punt (ook voor verliezer)
- * Set gewonnen als games_team1 > games_team2
- */
 export function berekenSetPunten(uitslag: SetUitslag): SpelerPunten[] {
   const { games_team1, games_team2 } = uitslag
   const team1Wint = games_team1 > games_team2
@@ -43,13 +37,11 @@ export function berekenSetPunten(uitslag: SetUitslag): SpelerPunten[] {
     wedstrijd_id: uitslag.wedstrijdId,
     games_gewonnen: games,
     set_gewonnen: setGewonnen,
-    is_invaller: uitslag.invallers.has(speler_id)
+    is_invaller: uitslag.invallers.includes(speler_id)
   })
 
-  // Team 1
   punten.push(maakPunt(uitslag.team1.speler1Id, games_team1, team1Wint))
   punten.push(maakPunt(uitslag.team1.speler2Id, games_team1, team1Wint))
-  // Team 2
   punten.push(maakPunt(uitslag.team2.speler1Id, games_team2, !team1Wint))
   punten.push(maakPunt(uitslag.team2.speler2Id, games_team2, !team1Wint))
 
@@ -66,7 +58,6 @@ export interface StandRij {
   positie?: number
 }
 
-/** Sorteer stand: primair gewonnen games, secundair gewonnen sets */
 export function sorteerStand(rijen: StandRij[]): StandRij[] {
   return [...rijen]
     .sort((a, b) => {
