@@ -29,7 +29,8 @@ export default function LoginPage() {
       setFout(`Fout: ${error.message}`)
       setLaden(false)
     } else {
-      router.push('/beheer')
+     router.refresh()
+router.push('/beheer')
     }
   }
 
