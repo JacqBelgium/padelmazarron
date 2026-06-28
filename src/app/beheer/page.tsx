@@ -1,41 +1,86 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
 
-export default async function BeheerPage() {
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [wachtwoord, setWachtwoord] = useState('')
+  const [fout, setFout] = useState('')
+  const [laden, setLaden] = useState(false)
+  const router = useRouter()
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login')
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLaden(true)
+    setFout('')
+    console.log('Inloggen met:', email)
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: wachtwoord,
+    })
+
+    console.log('Resultaat:', data, error)
+
+    if (error) {
+      setFout(`Fout: ${error.message}`)
+      setLaden(false)
+    } else {
+      router.push('/beheer')
+    }
+  }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-brand-500">PadelMazarron — Beheer</h1>
-        <span className="text-sm text-gray-500">{user.email}</span>
-      </nav>
+    <main className="min-h-screen flex items-center justify-center bg-brand-50">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 w-full max-w-lg">
+        <h1 className="text-3xl font-bold text-brand-500 mb-2">PadelMazarron</h1>
+        <p className="text-gray-500 mb-10">Beheerderslogin</p>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Dashboard</h2>
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-2">
+              E-mailadres
+            </label>
+            <input
+              type="text"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-brand-500"
+              placeholder="jouw@email.com"
+              autoComplete="off"
+            />
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a href="/beheer/spelers" className="bg-white rounded-xl border border-gray-100 p-6 hover:border-brand-500 transition-colors">
-            <div className="text-2xl mb-2">👥</div>
-            <h3 className="font-semibold text-gray-800">Spelers</h3>
-            <p className="text-sm text-gray-500 mt-1">Beheer de deelnemers</p>
-          </a>
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-2">
+              Wachtwoord (tijdelijk zichtbaar)
+            </label>
+            <input
+              type="text"
+              value={wachtwoord}
+              onChange={e => setWachtwoord(e.target.value)}
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-brand-500"
+              placeholder="jouw wachtwoord"
+              autoComplete="off"
+            />
+            <p className="text-sm text-gray-400 mt-1">Ingevuld: {wachtwoord}</p>
+          </div>
 
-          <a href="/beheer/wedstrijden" className="bg-white rounded-xl border border-gray-100 p-6 hover:border-brand-500 transition-colors">
-            <div className="text-2xl mb-2">🏆</div>
-            <h3 className="font-semibold text-gray-800">Wedstrijden</h3>
-            <p className="text-sm text-gray-500 mt-1">Schema en rondes</p>
-          </a>
+          {fout && (
+            <p className="text-red-500 text-base font-medium">{fout}</p>
+          )}
 
-          <a href="/beheer/uitslagen" className="bg-white rounded-xl border border-gray-100 p-6 hover:border-brand-500 transition-colors">
-            <div className="text-2xl mb-2">📊</div>
-            <h3 className="font-semibold text-gray-800">Uitslagen</h3>
-            <p className="text-sm text-gray-500 mt-1">Invoer en correcties</p>
-          </a>
-        </div>
+          <button
+            type="submit"
+            disabled={laden}
+            className="w-full bg-brand-500 text-white rounded-lg py-3 text-base font-medium hover:bg-brand-600 disabled:opacity-50"
+          >
+            {laden ? 'Bezig...' : 'Inloggen'}
+          </button>
+        </form>
       </div>
     </main>
   )
