@@ -29,7 +29,6 @@ export default function WedstrijdBeheerPage() {
     setWedstrijd(w)
     setAlleSpelers(s ?? [])
     setDeelnames(d ?? [])
-    // Zet bestaande deelnemers als geselecteerd
     const ids = new Set((d ?? []).map((x: Deelname) => x.speler_id))
     setGeselecteerd(ids)
     setLaden(false)
@@ -50,23 +49,16 @@ export default function WedstrijdBeheerPage() {
   async function handleKlaar() {
     const aantal = geselecteerd.size
     if (aantal === 0) { setFout('Selecteer minstens 4 spelers.'); return }
-    if (aantal % 4 !== 0) { setFout(`${aantal} spelers geselecteerd — moet deelbaar zijn door 4 (bv. 4, 8, 12, 16).`); return }
-
+    if (aantal % 4 !== 0) { setFout(`${aantal} spelers geselecteerd — moet deelbaar zijn door 4.`); return }
     setOpslaan(true)
     setFout('')
-
-    // Verwijder bestaande deelnames
     await supabase.from('deelnames').delete().eq('wedstrijd_id', params.id)
-
-    // Voeg nieuwe deelnames toe
     const nieuweDeelnames = [...geselecteerd].map(speler_id => ({
       wedstrijd_id: params.id as string,
       speler_id,
       uitnodiging_status: 'bevestigd' as const,
     }))
-
     const { error } = await supabase.from('deelnames').insert(nieuweDeelnames)
-
     if (error) {
       setFout(`Fout: ${error.message}`)
     } else {
@@ -78,7 +70,7 @@ export default function WedstrijdBeheerPage() {
 
   async function activeerWedstrijd() {
     if (geselecteerd.size === 0 || geselecteerd.size % 4 !== 0) {
-      setFout('Sla eerst de deelnemers op (deelbaar door 4).')
+      setFout('Sla eerst de deelnemers op.')
       return
     }
     setOpslaan(true)
@@ -86,7 +78,7 @@ export default function WedstrijdBeheerPage() {
       .from('wedstrijden').update({ status: 'Actief' }).eq('id', params.id)
     if (!error) {
       setWedstrijd(prev => prev ? { ...prev, status: 'Actief' } : null)
-      setBericht('✓ Wedstrijd geactiveerd! Schema genereren is de volgende stap.')
+      setBericht('✓ Wedstrijd geactiveerd!')
     }
     setOpslaan(false)
   }
@@ -103,24 +95,15 @@ export default function WedstrijdBeheerPage() {
         <div className="flex items-center gap-3">
           <a href="/beheer/wedstrijden" className="text-gray-400 hover:text-gray-600 text-sm">← Wedstrijden</a>
           <h1 className="text-lg font-bold text-brand-500">{wedstrijd.naam}</h1>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            wedstrijd.status === 'Actief' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-          }`}>{wedstrijd.status}</span>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${wedstrijd.status === 'Actief' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{wedstrijd.status}</span>
         </div>
         {wedstrijd.status === 'Concept' && deelbaarDoor4 && deelnames.length === aantal && (
-          <button
-            onClick={activeerWedstrijd}
-            disabled={opslaan}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-          >
+          <button onClick={activeerWedstrijd} disabled={opslaan} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
             ✓ Wedstrijd activeren
           </button>
         )}
       </nav>
-
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-
-        {/* Info blokken */}
         <div className="grid grid-cols-4 gap-4">
           {[
             { label: 'Startdatum', waarde: wedstrijd.datum_van },
@@ -134,68 +117,35 @@ export default function WedstrijdBeheerPage() {
             </div>
           ))}
         </div>
-
-        {bericht && (
-          <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-green-700 text-sm font-medium">
-            {bericht}
-          </div>
-        )}
-
-        {fout && (
-          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm font-medium">
-            ⚠ {fout}
-          </div>
-        )}
-
-        {/* Deelnemers selecteren */}
+        {bericht && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-green-700 text-sm font-medium">{bericht}</div>}
+        {fout && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm font-medium">⚠ {fout}</div>}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-semibold text-gray-800">Deelnemers selecteren</h2>
             <span className={`text-sm font-medium ${deelbaarDoor4 ? 'text-green-600' : 'text-gray-500'}`}>
-              {aantal} geselecteerd {deelbaarDoor4 ? '✓' : aantal > 0 ? `(${4 - (aantal % 4)} te gaan voor volgende groep)` : ''}
+              {aantal} geselecteerd {deelbaarDoor4 ? '✓' : aantal > 0 ? `(${4 - (aantal % 4)} te gaan)` : ''}
             </span>
           </div>
-
           <div className="divide-y divide-gray-50">
             {alleSpelers.map(speler => (
-              <label
-                key={speler.id}
-                className={`px-6 py-3 flex items-center gap-3 ${wedstrijd.status === 'Concept' ? 'cursor-pointer hover:bg-gray-50' : ''}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={geselecteerd.has(speler.id)}
-                  onChange={() => toggleSpeler(speler.id)}
-                  disabled={wedstrijd.status !== 'Concept'}
-                  className="w-4 h-4 accent-blue-600"
-                />
-                <span className="font-medium text-gray-800 flex-1">
-                  {speler.voornaam} {speler.achternaam}
-                </span>
+              <label key={speler.id} className={`px-6 py-3 flex items-center gap-3 ${wedstrijd.status === 'Concept' ? 'cursor-pointer hover:bg-gray-50' : ''}`}>
+                <input type="checkbox" checked={geselecteerd.has(speler.id)} onChange={() => toggleSpeler(speler.id)} disabled={wedstrijd.status !== 'Concept'} className="w-4 h-4 accent-blue-600" />
+                <span className="font-medium text-gray-800 flex-1">{speler.voornaam} {speler.achternaam}</span>
                 <span className="text-xs text-gray-400">{speler.geslacht}</span>
               </label>
             ))}
           </div>
-
           {wedstrijd.status === 'Concept' && (
             <div className="px-6 py-4 border-t border-gray-100 flex items-center gap-3">
-              <button
-                onClick={handleKlaar}
-                disabled={opslaan || aantal === 0}
-                className="bg-brand-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 disabled:opacity-50"
-              >
+              <button onClick={handleKlaar} disabled={opslaan || aantal === 0} className="bg-brand-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 disabled:opacity-50">
                 {opslaan ? 'Opslaan...' : `Deelnemers opslaan (${aantal})`}
               </button>
-              <button
-                onClick={() => { setGeselecteerd(new Set()); setFout(''); setBericht('') }}
-                className="text-gray-500 text-sm hover:text-gray-700"
-              >
+              <button onClick={() => { setGeselecteerd(new Set()); setFout(''); setBericht('') }} className="text-gray-500 text-sm hover:text-gray-700">
                 Alles wissen
               </button>
             </div>
           )}
         </div>
-
       </div>
     </main>
   )
