@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdmin } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { genereerSchema } from '@/lib/schema-algoritme'
 
@@ -7,14 +8,19 @@ export async function POST(request: NextRequest) {
     const { wedstrijd_id } = await request.json()
     if (!wedstrijd_id) return NextResponse.json({ fout: 'wedstrijd_id vereist' }, { status: 400 })
 
+    // Controleer authenticatie via server client
     const supabase = createClient()
-
-    // Controleer authenticatie
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ fout: 'Niet ingelogd' }, { status: 401 })
 
+    // Gebruik admin client voor database operaties (omzeilt RLS)
+    const admin = createAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
     // Haal wedstrijd op
-    const { data: wedstrijd } = await supabase
+    const { data: wedstrijd } = await admin
       .from('wedstrijden')
       .select('*')
       .eq('id', wedstrijd_id)
@@ -24,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (wedstrijd.status !== 'Actief') return NextResponse.json({ fout: 'Wedstrijd moet Actief zijn' }, { status: 400 })
 
     // Haal deelnemers op
-    const { data: deelnames } = await supabase
+    const { data: deelnames } = await admin
       .from('deelnames')
       .select('speler_id')
       .eq('wedstrijd_id', wedstrijd_id)
@@ -39,27 +45,19 @@ export async function POST(request: NextRequest) {
 
     // Genereer schema
     const schema = genereerSchema(n, wedstrijd.schema_type)
-    const spelerIds = deelnames.map(d => d.speler_id)
+    const spelerIds = deelnames.map((d: { speler_id: string }) => d.speler_id)
 
-    // Verwijder bestaand schema als dat er is
-    const { data: bestaandeRondes } = await supabase
-      .from('rondes')
-      .select('id')
-      .eq('wedstrijd_id', wedstrijd_id)
-
-    if (bestaandeRondes && bestaandeRondes.length > 0) {
-      await supabase.from('rondes').delete().eq('wedstrijd_id', wedstrijd_id)
-    }
+    // Verwijder bestaand schema
+    await admin.from('rondes').delete().eq('wedstrijd_id', wedstrijd_id)
 
     // Sla rondes, groepen en sets op
     for (const ronde of schema.rondes) {
-      // Maak ronde aan
-      const { data: rondeData } = await supabase
+      const { data: rondeData } = await admin
         .from('rondes')
         .insert({
           wedstrijd_id,
           ronde_nummer: ronde.ronde,
-          status: ronde.ronde === 1 ? 'Open' : 'Open',
+          status: 'Open',
         })
         .select()
         .single()
@@ -67,8 +65,7 @@ export async function POST(request: NextRequest) {
       if (!rondeData) continue
 
       for (const groep of ronde.groepen) {
-        // Maak groep aan
-        const { data: groepData } = await supabase
+        const { data: groepData } = await admin
           .from('groepen')
           .insert({ ronde_id: rondeData.id, baan_nummer: groep.baan })
           .select()
@@ -76,16 +73,14 @@ export async function POST(request: NextRequest) {
 
         if (!groepData) continue
 
-        // Koppel spelers aan groep
-        const groepSpelers = groep.spelers.map(idx => ({
+        const groepSpelers = groep.spelers.map((idx: number) => ({
           groep_id: groepData.id,
           speler_id: spelerIds[idx],
           is_invaller: false,
         }))
-        await supabase.from('groep_spelers').insert(groepSpelers)
+        await admin.from('groep_spelers').insert(groepSpelers)
 
-        // Maak sets aan
-        const sets = groep.sets.map(set => ({
+        const sets = groep.sets.map((set: { set: number; team1: number[]; team2: number[] }) => ({
           groep_id: groepData.id,
           set_nummer: set.set,
           team1_speler1_id: spelerIds[set.team1[0]],
@@ -93,7 +88,7 @@ export async function POST(request: NextRequest) {
           team2_speler1_id: spelerIds[set.team2[0]],
           team2_speler2_id: spelerIds[set.team2[1]],
         }))
-        await supabase.from('sets').insert(sets)
+        await admin.from('sets').insert(sets)
       }
     }
 
