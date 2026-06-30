@@ -37,7 +37,7 @@ export default function SchemaOverzichtPage() {
       .from('wedstrijden')
       .select('naam')
       .eq('id', params.id)
-      .single()
+      .maybeSingle()
     setWedstrijdNaam(wedstrijd?.naam ?? '')
 
     const { data: rondesData } = await supabase
