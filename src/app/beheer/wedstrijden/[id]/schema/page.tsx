@@ -94,10 +94,16 @@ export default function SchemaOverzichtPage() {
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-4">
         {rondes.map(ronde => (
           <div key={ronde.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-800">Ronde {ronde.ronde_nummer}</h2>
+<div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+              
+                <a href={`/beheer/wedstrijden/${params.id}/rondes/${ronde.id}`}
+                className="font-semibold text-gray-800 hover:text-brand-500"
+              >
+                Ronde {ronde.ronde_nummer} →
+              </a>
               <span className="text-xs text-gray-500">{ronde.status}</span>
             </div>
+
             <div className="divide-y divide-gray-50">
               {ronde.groepen.map(groep => (
                 <div key={groep.id} className="px-6 py-3 grid grid-cols-[80px_1fr] items-center">
