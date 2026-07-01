@@ -118,7 +118,7 @@ export default function PuntenstandPage() {
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">#</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Speler</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Rondes</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Sets</th>
+                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Sets gewonnen</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Games</th>
               </tr>
             </thead>
