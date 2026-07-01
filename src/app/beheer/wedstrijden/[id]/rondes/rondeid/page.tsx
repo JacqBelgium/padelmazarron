@@ -101,10 +101,10 @@ export default function RondeUitslagPage() {
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3">
         <a href={`/beheer/wedstrijden/${params.id}/schema`} className="text-gray-400 hover:text-gray-600 text-sm">← Schema</a>
-        <h1 className="text-lg font-bold text-brand-500">Ronde {rondeNummer} — Uitslagen</h1>
+        <h1 className="text-lg font-bold text-brand-500">Ronde {rondeNummer} — Uitslagen invoeren</h1>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-4">
+      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
         {groepen.map(groep => (
           <div key={groep.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
             <div className="bg-gray-50 px-6 py-3 border-b border-gray-100">
@@ -147,7 +147,7 @@ function SetRij({
   const team2Naam = `${naamVan(spelers, set.team2_speler1_id)} & ${naamVan(spelers, set.team2_speler2_id)}`
 
   return (
-    <div className="px-6 py-3 flex items-center gap-4">
+    <div className="px-6 py-3 flex items-center gap-3">
       <span className="text-xs font-medium text-gray-400 w-12">Set {set.set_nummer}</span>
       <span className="text-sm text-gray-700 flex-1">{team1Naam}</span>
       <input
