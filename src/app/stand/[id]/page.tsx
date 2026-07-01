@@ -1,3 +1,4 @@
+import React from 'react'
 import { createClient as createAdmin } from '@supabase/supabase-js'
 
 interface StandRij {
@@ -116,14 +117,7 @@ export default async function PubliekeStandPage({ params }: { params: { id: stri
       <nav className="bg-white border-b border-gray-100 px-6 py-6 text-center">
         <h1 className="text-2xl font-bold text-brand-500">PadelMazarron</h1>
         <p className="text-gray-500 mt-1">{naam} — Puntenstand</p>
-        
-          href={`/schema/65622ffe-a16e-4613-bec9-a02b16e6fb72`}
-          className="text-sm text-brand-500 hover:underline mt-1 inline-block"
-        >
-          Bekijk speelschema →
-        </a>
       </nav>
-
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
         <StandTabel rijen={heren} titel="🏆 Heren" />
         <StandTabel rijen={dames} titel="🏆 Dames" />
