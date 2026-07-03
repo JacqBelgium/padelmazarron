@@ -2,11 +2,6 @@
 
 import React, { useEffect, useState } from 'react'
 
-interface SpelerInfo {
-  voornaam: string
-  achternaam: string
-}
-
 interface GroepInfo {
   baan: number
   spelers: string[]
@@ -34,21 +29,24 @@ export default function PubliekSchemaPage({ params }: { params: { id: string } }
 
   async function downloadPdf() {
     const { jsPDF } = await import('jspdf')
-    const { default: autoTable } = await import('jspdf-autotable')
+    const autoTableModule = await import('jspdf-autotable')
+    const autoTable = autoTableModule.default
 
     const doc = new jsPDF()
     doc.setFontSize(18)
     doc.text('PadelMazarron', 14, 20)
     doc.setFontSize(13)
-    doc.text(`${naam} — Speelschema`, 14, 30)
+    doc.text(`${naam} - Speelschema`, 14, 30)
     doc.setFontSize(10)
     doc.text(`Gegenereerd op ${new Date().toLocaleDateString('nl-BE')}`, 14, 38)
 
     let y = 48
 
     for (const ronde of rondes) {
-      if (y > 250) { doc.addPage(); y = 20 }
-
+      if (y > 250) {
+        doc.addPage()
+        y = 20
+      }
       doc.setFontSize(11)
       doc.setTextColor(31, 92, 153)
       doc.text(`Ronde ${ronde.ronde}`, 14, y)
@@ -58,7 +56,7 @@ export default function PubliekSchemaPage({ params }: { params: { id: string } }
       autoTable(doc, {
         startY: y,
         head: [['Baan', 'Spelers']],
-        body: ronde.groepen.map(g => [`Baan ${g.baan}`, g.spelers.join('  |  ')]),
+        body: ronde.groepen.map((g: GroepInfo) => [`Baan ${g.baan}`, g.spelers.join(' | ')]),
         theme: 'striped',
         headStyles: { fillColor: [31, 92, 153] },
         columnStyles: { 0: { cellWidth: 25 } },
@@ -70,7 +68,9 @@ export default function PubliekSchemaPage({ params }: { params: { id: string } }
     doc.save(`schema-${naam.replace(/\s+/g, '-')}.pdf`)
   }
 
-  if (laden) return <div className="min-h-screen flex items-center justify-center">Schema laden...</div>
+  if (laden) {
+    return <div className="min-h-screen flex items-center justify-center">Schema laden...</div>
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -82,28 +82,28 @@ export default function PubliekSchemaPage({ params }: { params: { id: string } }
             onClick={downloadPdf}
             className="bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-600"
           >
-            📄 Download PDF
+            Downloaden PDF
           </button>
           
             href={`/stand/${params.id}`}
             className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:border-brand-500"
           >
-            🏆 Puntenstand
+            Puntenstand
           </a>
         </div>
       </nav>
 
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-4">
-        {rondes.map(ronde => (
+        {rondes.map((ronde: RondeInfo) => (
           <div key={ronde.ronde} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="bg-brand-50 px-6 py-3 border-b border-gray-100">
-              <h2 className="font-semibold text-brand-600">Ronde {ronde.ronde}</h2>
+            <div className="bg-gray-50 px-6 py-3 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-800">Ronde {ronde.ronde}</h2>
             </div>
             <div className="divide-y divide-gray-50">
-              {ronde.groepen.map(groep => (
+              {ronde.groepen.map((groep: GroepInfo) => (
                 <div key={groep.baan} className="px-6 py-3 grid grid-cols-[80px_1fr] items-center">
                   <span className="text-sm font-medium text-gray-500">Baan {groep.baan}</span>
-                  <span className="text-sm text-gray-800">{groep.spelers.join('  |  ')}</span>
+                  <span className="text-sm text-gray-800">{groep.spelers.join(' | ')}</span>
                 </div>
               ))}
             </div>
