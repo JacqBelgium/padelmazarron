@@ -106,6 +106,7 @@ export default function WedstrijdBeheerPage() {
 
   const aantal = geselecteerd.size
   const deelbaarDoor4 = aantal > 0 && aantal % 4 === 0
+  const id = params.id as string
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -118,7 +119,7 @@ export default function WedstrijdBeheerPage() {
         <div className="flex gap-2">
           {wedstrijd.status === 'Concept' && deelbaarDoor4 && deelnames.length === aantal && (
             <button onClick={activeerWedstrijd} disabled={opslaan} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-              ✓ Wedstrijd activeren
+              ✓ Activeren
             </button>
           )}
           {wedstrijd.status === 'Actief' && (
@@ -130,6 +131,8 @@ export default function WedstrijdBeheerPage() {
       </nav>
 
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+
+        {/* Info blokken */}
         <div className="grid grid-cols-4 gap-4">
           {[
             { label: 'Startdatum', waarde: wedstrijd.datum_van },
@@ -144,9 +147,34 @@ export default function WedstrijdBeheerPage() {
           ))}
         </div>
 
+        {/* Navigatie knoppen */}
+        {wedstrijd.status === 'Actief' && (
+          <div className="grid grid-cols-3 gap-4">
+            <a href={`/beheer/wedstrijden/${id}/schema`}
+              className="bg-white rounded-xl border border-gray-100 p-5 hover:border-brand-500 transition-colors text-center">
+              <div className="text-2xl mb-2">📋</div>
+              <p className="font-semibold text-gray-800 text-sm">Schema</p>
+              <p className="text-xs text-gray-500 mt-1">Bekijk alle rondes</p>
+            </a>
+            <a href={`/beheer/wedstrijden/${id}/stand`}
+              className="bg-white rounded-xl border border-gray-100 p-5 hover:border-brand-500 transition-colors text-center">
+              <div className="text-2xl mb-2">🏆</div>
+              <p className="font-semibold text-gray-800 text-sm">Puntenstand</p>
+              <p className="text-xs text-gray-500 mt-1">Herbereken en bekijk</p>
+            </a>
+            <a href={`/stand/${id}`}
+              className="bg-white rounded-xl border border-gray-100 p-5 hover:border-brand-500 transition-colors text-center">
+              <div className="text-2xl mb-2">🌐</div>
+              <p className="font-semibold text-gray-800 text-sm">Publieke pagina</p>
+              <p className="text-xs text-gray-500 mt-1">Stand + schema voor leden</p>
+            </a>
+          </div>
+        )}
+
         {bericht && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-green-700 text-sm font-medium">{bericht}</div>}
         {fout && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm font-medium">⚠ {fout}</div>}
 
+        {/* Deelnemers */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-semibold text-gray-800">Deelnemers</h2>
@@ -174,6 +202,7 @@ export default function WedstrijdBeheerPage() {
             </div>
           )}
         </div>
+
       </div>
     </main>
   )
