@@ -47,9 +47,15 @@ export default function Home() {
         )}
 
         <div className="text-center pt-4">
-          <a href="/login" className="text-sm text-gray-400 hover:text-gray-600">
-            Beheerder login →
-          </a>
+
+          <div className="flex justify-center gap-6">
+  <a href="/login" className="text-sm text-gray-400 hover:text-gray-600">
+    Beheerder login →
+  </a>
+  <a href="/privacy" className="text-sm text-gray-400 hover:text-gray-600">
+    Privacyverklaring
+  </a>
+</div>
         </div>
       </div>
     </main>

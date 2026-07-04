@@ -27,7 +27,19 @@ export default function BeheerPage() {
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-brand-500">PadelMazarron — Beheer</h1>
-        <span className="text-sm text-gray-500">{email}</span>
+      
+        <div className="flex items-center gap-3">
+  <span className="text-sm text-gray-500">{email}</span>
+  <button
+    onClick={async () => {
+      await supabase.auth.signOut()
+      router.push('/login')
+    }}
+    className="text-sm text-gray-400 hover:text-gray-600"
+  >
+    Uitloggen
+  </button>
+</div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8">
