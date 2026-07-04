@@ -85,7 +85,7 @@ export default function PubliekSchemaPage({ params }: { params: { id: string } }
             Downloaden PDF
           </button>
           
-            href={`/stand/${params.id}`}
+           <a href={`/stand/${params.id}`}
             className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:border-brand-500"
           >
             Puntenstand
