@@ -1,10 +1,77 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+
+function ClubZoeker() {
+  const [zoekterm, setZoekterm] = React.useState('')
+  const [resultaten, setResultaten] = React.useState<any[]>([])
+  const [laden, setLaden] = React.useState(false)
+  const [gezoekt, setGezoekt] = React.useState(false)
+
+  async function zoek() {
+    if (!zoekterm.trim()) return
+    setLaden(true)
+    setGezoekt(true)
+    const { createClient } = await import('@supabase/supabase-js')
+    const client = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const { data } = await client
+      .from('clubs')
+      .select('id, naam, sport')
+      .ilike('naam', `%${zoekterm}%`)
+    setResultaten(data ?? [])
+    setLaden(false)
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '12px', maxWidth: '480px', margin: '0 auto 24px' }}>
+        <input
+          type="text"
+          value={zoekterm}
+          onChange={e => setZoekterm(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && zoek()}
+          placeholder="Enter club name..."
+          style={{
+            flex: 1, padding: '14px 20px', borderRadius: '8px',
+            border: '2px solid #E5E7EB', fontSize: '16px',
+            outline: 'none',
+          }}
+        />
+        <button
+          onClick={zoek}
+          disabled={laden}
+          style={{
+            background: '#1F5C99', color: '#fff', padding: '14px 24px',
+            borderRadius: '8px', border: 'none', fontWeight: 700,
+            fontSize: '15px', cursor: 'pointer',
+          }}
+        >
+          {laden ? '...' : 'Search'}
+        </button>
+      </div>
+
+      {gezoekt && resultaten.length === 0 && (
+        <p style={{ color: '#9CA3AF', fontSize: '15px' }}>No club found. Contact us to register your club.</p>
+      )}
+
+      {resultaten.map(club => (
+        <a key={club.id} href={`/club/${club.id}`} style={{
+          display: 'block', background: '#F5F7FA', border: '1px solid #E5E7EB',
+          borderRadius: '10px', padding: '16px 24px', marginBottom: '12px',
+          textDecoration: 'none', textAlign: 'left',
+        }}>
+          <div style={{ fontWeight: 700, color: '#0A1628', fontSize: '16px' }}>{club.naam}</div>
+          <div style={{ color: '#6B7280', fontSize: '14px', marginTop: '4px' }}>{club.sport}</div>
+        </a>
+      ))}
+    </div>
+  )
+}
 
 export default function LandingPage() {
-  const [clubCount] = useState(1)
-
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", margin: 0, padding: 0 }}>
 
@@ -88,17 +155,17 @@ export default function LandingPage() {
             }}>
               See how it works →
             </a>
-            <a href="/login" style={{
+            <a href="#find" style={{
               background: 'transparent', color: '#ffffff',
               padding: '16px 36px', borderRadius: '8px',
               textDecoration: 'none', fontWeight: 600, fontSize: '16px',
               border: '1px solid rgba(255,255,255,0.2)',
             }}>
-              Admin login
+              Find your club
             </a>
           </div>
 
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', marginTop: '24px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginTop: '24px' }}>
             Free for clubs · No credit card required
           </p>
         </div>
@@ -187,6 +254,17 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FIND YOUR CLUB */}
+      <section id="find" style={{ background: '#ffffff', padding: '96px 48px', textAlign: 'center' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <p style={{ color: '#1F5C99', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '16px' }}>Find your club</p>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#0A1628', marginBottom: '40px', letterSpacing: '-1px' }}>
+            Already a member?<br />Find your club competition.
+          </h2>
+          <ClubZoeker />
         </div>
       </section>
 
