@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       const g2 = set.games_team2
       const team1Wint = g1 > g2
 
-      const rondeId = set.groepen?.ronde_id
+      const rondeId = (set.groepen as any)?.ronde_id
 
       // Team 1 spelers
       nieuwePunten.push({
