@@ -94,7 +94,7 @@ export default function PubliekSchemaPage({ params }: { params: { id: string } }
             Download PDF
           </button>
           
-            href={`/stand/${params.id}`}
+            <a href={`/stand/${params.id}`}
             style={{
               background: 'transparent', color: '#ffffff',
               padding: '10px 24px', borderRadius: '8px',
