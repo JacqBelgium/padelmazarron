@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -23,61 +23,102 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setFout('Ongeldig e-mailadres of wachtwoord')
+      setFout('Invalid email or password.')
       setLaden(false)
     } else {
+      router.refresh()
       router.push('/beheer')
     }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-brand-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-brand-500 mb-2">PadelMazarron</h1>
-        <p className="text-gray-500 text-sm mb-8">Beheerderslogin</p>
+    <div style={{ fontFamily: 'Inter, sans-serif', minHeight: '100vh', background: '#0A1628', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              E-mailadres
+      {/* Logo */}
+      <div style={{ marginBottom: '40px', textAlign: 'center' }}>
+        <div style={{ color: '#E8C547', fontWeight: 900, fontSize: '28px', letterSpacing: '-1px', marginBottom: '8px' }}>
+          RacketComp
+        </div>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', margin: 0 }}>
+          Admin login
+        </p>
+      </div>
+
+      {/* Form */}
+      <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '400px' }}>
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, marginBottom: '8px', letterSpacing: '0.5px' }}>
+              EMAIL
             </label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="jouw@email.com"
+              placeholder="your@email.com"
               required
+              autoComplete="off"
+              style={{
+                width: '100%', padding: '12px 16px',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '8px', color: '#ffffff',
+                fontSize: '15px', outline: 'none',
+                boxSizing: 'border-box',
+              }}
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Wachtwoord
+          <div style={{ marginBottom: '28px' }}>
+            <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, marginBottom: '8px', letterSpacing: '0.5px' }}>
+              PASSWORD
             </label>
             <input
               type="password"
               value={wachtwoord}
               onChange={e => setWachtwoord(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="••••••••"
               required
+              autoComplete="off"
+              style={{
+                width: '100%', padding: '12px 16px',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '8px', color: '#ffffff',
+                fontSize: '15px', outline: 'none',
+                boxSizing: 'border-box',
+              }}
             />
           </div>
 
           {fout && (
-            <p className="text-red-500 text-sm">{fout}</p>
+            <div style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#FCA5A5', fontSize: '14px' }}>
+              {fout}
+            </div>
           )}
 
           <button
             type="submit"
             disabled={laden}
-            className="w-full bg-brand-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-brand-600 disabled:opacity-50 transition-colors"
+            style={{
+              width: '100%', padding: '14px',
+              background: '#E8C547', color: '#0A1628',
+              border: 'none', borderRadius: '8px',
+              fontWeight: 800, fontSize: '15px',
+              cursor: laden ? 'not-allowed' : 'pointer',
+              opacity: laden ? 0.7 : 1,
+            }}
           >
-            {laden ? 'Bezig...' : 'Inloggen'}
+            {laden ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
       </div>
-    </main>
+
+      {/* Back link */}
+      <a href="/" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none', fontSize: '13px', marginTop: '24px' }}>
+        ← Back to RacketComp
+      </a>
+
+    </div>
   )
 }
