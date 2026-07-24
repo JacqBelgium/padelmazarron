@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -21,50 +21,75 @@ export default function BeheerPage() {
     })
   }, [])
 
-  if (laden) return <div className="min-h-screen flex items-center justify-center">Laden...</div>
+  async function uitloggen() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  if (laden) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
+      <div style={{ color: '#E8C547' }}>Loading...</div>
+    </div>
+  )
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-brand-500">PadelMazarron — Beheer</h1>
-      
-        <div className="flex items-center gap-3">
-  <span className="text-sm text-gray-500">{email}</span>
-  <button
-    onClick={async () => {
-      await supabase.auth.signOut()
-      router.push('/login')
-    }}
-    className="text-sm text-gray-400 hover:text-gray-600"
-  >
-    Uitloggen
-  </button>
-</div>
+    <div style={{ fontFamily: 'Inter, sans-serif', minHeight: '100vh', background: '#F5F7FA' }}>
+
+      {/* Nav */}
+      <nav style={{ background: '#0A1628', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ color: '#E8C547', fontWeight: 900, fontSize: '18px', letterSpacing: '-0.5px' }}>
+          RacketComp
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{email}</span>
+          <button
+            onClick={uitloggen}
+            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)', padding: '6px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
+          >
+            Sign out
+          </button>
+        </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Dashboard</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a href="/beheer/spelers" className="bg-white rounded-xl border border-gray-100 p-6 hover:border-brand-500 transition-colors">
-            <div className="text-2xl mb-2">👥</div>
-            <h3 className="font-semibold text-gray-800">Spelers</h3>
-            <p className="text-sm text-gray-500 mt-1">Beheer de deelnemers</p>
-          </a>
-
-          <a href="/beheer/wedstrijden" className="bg-white rounded-xl border border-gray-100 p-6 hover:border-brand-500 transition-colors">
-            <div className="text-2xl mb-2">🏆</div>
-            <h3 className="font-semibold text-gray-800">Wedstrijden</h3>
-            <p className="text-sm text-gray-500 mt-1">Schema en rondes</p>
-          </a>
-
-          <a href="/beheer/uitslagen" className="bg-white rounded-xl border border-gray-100 p-6 hover:border-brand-500 transition-colors">
-            <div className="text-2xl mb-2">📊</div>
-            <h3 className="font-semibold text-gray-800">Uitslagen</h3>
-            <p className="text-sm text-gray-500 mt-1">Invoer en correcties</p>
-          </a>
+      {/* Header */}
+      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
+          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Dashboard</h1>
         </div>
       </div>
-    </main>
+
+      {/* Cards */}
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+
+          <a href="/beheer/spelers" style={{ textDecoration: 'none' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer', transition: 'border-color 0.2s' }}>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>👥</div>
+              <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Players</h3>
+              <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Manage competition participants</p>
+            </div>
+          </a>
+
+          <a href="/beheer/wedstrijden" style={{ textDecoration: 'none' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>🏆</div>
+              <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Competitions</h3>
+              <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Schedule and rounds</p>
+            </div>
+          </a>
+
+          <a href="/beheer/uitslagen" style={{ textDecoration: 'none' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>📊</div>
+              <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Results</h3>
+              <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Enter and correct scores</p>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+    </div>
   )
 }
