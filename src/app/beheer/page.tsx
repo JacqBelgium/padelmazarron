@@ -1,4 +1,4 @@
-'use client'
+''use client'
 
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -7,15 +7,22 @@ import { useRouter } from 'next/navigation'
 export default function BeheerPage() {
   const [email, setEmail] = useState<string | null>(null)
   const [laden, setLaden] = useState(true)
+  const [isDemo, setIsDemo] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.push('/login')
       } else {
         setEmail(user.email ?? null)
+        const { data } = await supabase
+          .from('gebruikers')
+          .select('is_demo')
+          .eq('auth_id', user.id)
+          .single()
+        setIsDemo(data?.is_demo ?? false)
         setLaden(false)
       }
     })
@@ -51,6 +58,15 @@ export default function BeheerPage() {
         </div>
       </nav>
 
+      {/* Demo banner */}
+      {isDemo && (
+        <div style={{ background: '#FEF9C3', borderBottom: '1px solid #FDE68A', padding: '10px 32px', textAlign: 'center' }}>
+          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>
+            🔍 Demo mode — read only. You can browse but not make changes.
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -64,7 +80,7 @@ export default function BeheerPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
 
           <a href="/beheer/spelers" style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer', transition: 'border-color 0.2s' }}>
+            <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
               <div style={{ fontSize: '32px', marginBottom: '16px' }}>👥</div>
               <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Players</h3>
               <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Manage competition participants</p>
