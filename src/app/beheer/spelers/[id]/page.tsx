@@ -1,60 +1,50 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useDemo } from '@/lib/useDemo'
-import type { Speler } from '@/types/database'
 
-export default function BewerkSpelerPage() {
-  const [speler, setSpeler] = useState<Speler | null>(null)
+export default function NieuweSpelerPage() {
   const [voornaam, setVoornaam] = useState('')
   const [achternaam, setAchternaam] = useState('')
   const [geslacht, setGeslacht] = useState<'M' | 'V'>('M')
   const [email, setEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
-  const [status, setStatus] = useState('Actief')
   const [fout, setFout] = useState('')
-  const [laden, setLaden] = useState(true)
-  const [opslaan, setOpslaan] = useState(false)
+  const [laden, setLaden] = useState(false)
   const router = useRouter()
-  const params = useParams()
   const supabase = createClient()
   const { isDemo } = useDemo()
-
-  useEffect(() => { laadSpeler() }, [])
-
-  async function laadSpeler() {
-    const { data } = await supabase.from('spelers').select('*').eq('id', params.id).single()
-    if (data) {
-      setSpeler(data)
-      setVoornaam(data.voornaam)
-      setAchternaam(data.achternaam)
-      setGeslacht(data.geslacht)
-      setEmail(data.email)
-      setWhatsapp(data.whatsapp ?? '')
-      setStatus(data.status)
-    }
-    setLaden(false)
-  }
 
   async function handleOpslaan(e: React.FormEvent) {
     e.preventDefault()
     if (isDemo) return
-    setOpslaan(true)
-    const { error } = await supabase
-      .from('spelers')
-      .update({ voornaam, achternaam, geslacht, email, whatsapp: whatsapp || null, status })
-      .eq('id', params.id)
-    if (error) { setFout(`Error: ${error.message}`); setOpslaan(false) }
-    else router.push('/beheer/spelers')
-  }
+    setLaden(true)
+    setFout('')
 
-  async function handleVerwijderen() {
-    if (isDemo) return
-    if (!confirm(`Delete ${voornaam} ${achternaam}?`)) return
-    await supabase.from('spelers').delete().eq('id', params.id)
-    router.push('/beheer/spelers')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
+
+    const { data: gebruiker } = await supabase
+      .from('gebruikers').select('club_id').eq('auth_id', user.id).single()
+
+    if (!gebruiker?.club_id) {
+      setFout('Club not found. Contact the administrator.')
+      setLaden(false)
+      return
+    }
+
+    const { error } = await supabase.from('spelers').insert({
+      club_id: gebruiker.club_id,
+      voornaam, achternaam, geslacht, email,
+      whatsapp: whatsapp || null,
+      status: 'Actief',
+      gdpr_toestemming: false,
+    })
+
+    if (error) { setFout(`Error: ${error.message}`); setLaden(false) }
+    else router.push('/beheer/spelers')
   }
 
   const inputStyle = {
@@ -64,18 +54,6 @@ export default function BewerkSpelerPage() {
     background: isDemo ? '#F9FAFB' : '#ffffff', color: '#0A1628',
   }
   const labelStyle = { display: 'block', color: '#374151', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }
-
-  if (laden) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
-      <div style={{ color: '#E8C547' }}>Loading...</div>
-    </div>
-  )
-
-  if (!speler) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}>
-      Player not found.
-    </div>
-  )
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', minHeight: '100vh', background: '#F5F7FA' }}>
@@ -87,14 +65,14 @@ export default function BewerkSpelerPage() {
 
       {isDemo && (
         <div style={{ background: '#FEF9C3', borderBottom: '1px solid #FDE68A', padding: '10px 32px', textAlign: 'center' }}>
-          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>🔍 Demo mode — read only</span>
+          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>🔍 Demo mode — read only. Adding players is not available in demo.</span>
         </div>
       )}
 
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
-          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Edit player</h1>
+          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Add player</h1>
         </div>
       </div>
 
@@ -130,18 +108,9 @@ export default function BewerkSpelerPage() {
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} required readOnly={isDemo} />
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '28px' }}>
               <label style={labelStyle}>WhatsApp <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span></label>
               <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+32 ..." style={inputStyle} readOnly={isDemo} />
-            </div>
-
-            <div style={{ marginBottom: '28px' }}>
-              <label style={labelStyle}>Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} style={inputStyle} disabled={isDemo}>
-                <option value="Actief">Active</option>
-                <option value="Afgemeld">Unsubscribed</option>
-                <option value="Geblokkeerd">Blocked</option>
-              </select>
             </div>
 
             {fout && (
@@ -150,24 +119,17 @@ export default function BewerkSpelerPage() {
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button
-                  type="submit"
-                  disabled={opslaan || isDemo}
-                  style={{ background: isDemo ? '#E5E7EB' : '#E8C547', color: isDemo ? '#9CA3AF' : '#0A1628', padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: isDemo ? 'not-allowed' : 'pointer' }}
-                >
-                  {isDemo ? '🔒 Read only' : opslaan ? 'Saving...' : 'Save changes'}
-                </button>
-                <a href="/beheer/spelers" style={{ padding: '12px 20px', borderRadius: '8px', textDecoration: 'none', fontSize: '15px', color: '#6B7280', background: '#F3F4F6' }}>
-                  Back
-                </a>
-              </div>
-              {!isDemo && (
-                <button type="button" onClick={handleVerwijderen} style={{ background: 'transparent', border: 'none', color: '#DC2626', fontSize: '14px', cursor: 'pointer', fontWeight: 600 }}>
-                  Delete player
-                </button>
-              )}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                type="submit"
+                disabled={laden || isDemo}
+                style={{ background: isDemo ? '#E5E7EB' : '#E8C547', color: isDemo ? '#9CA3AF' : '#0A1628', padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: isDemo ? 'not-allowed' : 'pointer' }}
+              >
+                {isDemo ? '🔒 Read only' : laden ? 'Saving...' : 'Save player'}
+              </button>
+              <a href="/beheer/spelers" style={{ padding: '12px 20px', borderRadius: '8px', textDecoration: 'none', fontSize: '15px', color: '#6B7280', background: '#F3F4F6' }}>
+                Back
+              </a>
             </div>
 
           </form>
