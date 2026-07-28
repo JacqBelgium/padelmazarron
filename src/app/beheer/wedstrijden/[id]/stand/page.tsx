@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
+import { useDemo } from '@/lib/useDemo'
 
 interface StandRij {
   speler_id: string; naam: string; geslacht: string
@@ -18,6 +19,7 @@ export default function PuntenstandPage() {
   const [bericht, setBericht] = useState('')
   const params = useParams()
   const supabase = createClient()
+  const { isDemo } = useDemo()
   const id = params.id as string
 
   useEffect(() => { laadData() }, [])
@@ -51,13 +53,14 @@ export default function PuntenstandPage() {
   }
 
   async function herbereken() {
+    if (isDemo) return
     setBerekenen(true); setBericht('')
     const response = await fetch('/api/punten/bereken', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ wedstrijd_id: id }),
     })
     const data = await response.json()
-    if (data.succes) { setBericht(`✓ ${data.sets_verwerkt} sets processed, ${data.punten_aangemaakt} points calculated.`); laadData() }
+    if (data.succes) { setBericht(`✓ ${data.sets_verwerkt} sets processed.`); laadData() }
     else setBericht(`⚠ ${data.fout}`)
     setBerekenen(false)
   }
@@ -74,7 +77,7 @@ export default function PuntenstandPage() {
               <thead>
                 <tr style={{ background: '#0A1628' }}>
                   {['#', 'Player', 'Rounds', 'Sets won', 'Games'].map(h => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: h === '#' || h === 'Rounds' || h === 'Sets won' || h === 'Games' ? 'center' : 'left', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Player' ? 'left' : 'center', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -110,15 +113,23 @@ export default function PuntenstandPage() {
         <a href={`/beheer/wedstrijden/${id}`} style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '13px' }}>← Competition</a>
       </nav>
 
+      {isDemo && (
+        <div style={{ background: '#FEF9C3', borderBottom: '1px solid #FDE68A', padding: '10px 32px', textAlign: 'center' }}>
+          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>🔍 Demo mode — read only</span>
+        </div>
+      )}
+
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
             <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Standings — {wedstrijdNaam}</h1>
           </div>
-          <button onClick={herbereken} disabled={berekenen} style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
-            {berekenen ? 'Calculating...' : '🔄 Recalculate'}
-          </button>
+          {!isDemo && (
+            <button onClick={herbereken} disabled={berekenen} style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+              {berekenen ? 'Calculating...' : '🔄 Recalculate'}
+            </button>
+          )}
         </div>
       </div>
 
