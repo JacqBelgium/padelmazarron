@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
+import { useDemo } from '@/lib/useDemo'
 import type { Speler } from '@/types/database'
 
 export default function BewerkSpelerPage() {
@@ -19,12 +20,12 @@ export default function BewerkSpelerPage() {
   const router = useRouter()
   const params = useParams()
   const supabase = createClient()
+  const { isDemo } = useDemo()
 
   useEffect(() => { laadSpeler() }, [])
 
   async function laadSpeler() {
-    const { data } = await supabase
-      .from('spelers').select('*').eq('id', params.id).single()
+    const { data } = await supabase.from('spelers').select('*').eq('id', params.id).single()
     if (data) {
       setSpeler(data)
       setVoornaam(data.voornaam)
@@ -39,6 +40,7 @@ export default function BewerkSpelerPage() {
 
   async function handleOpslaan(e: React.FormEvent) {
     e.preventDefault()
+    if (isDemo) return
     setOpslaan(true)
     const { error } = await supabase
       .from('spelers')
@@ -49,6 +51,7 @@ export default function BewerkSpelerPage() {
   }
 
   async function handleVerwijderen() {
+    if (isDemo) return
     if (!confirm(`Delete ${voornaam} ${achternaam}?`)) return
     await supabase.from('spelers').delete().eq('id', params.id)
     router.push('/beheer/spelers')
@@ -58,7 +61,7 @@ export default function BewerkSpelerPage() {
     width: '100%', padding: '12px 16px',
     border: '1px solid #E5E7EB', borderRadius: '8px',
     fontSize: '15px', outline: 'none', boxSizing: 'border-box' as const,
-    background: '#ffffff', color: '#0A1628',
+    background: isDemo ? '#F9FAFB' : '#ffffff', color: '#0A1628',
   }
   const labelStyle = { display: 'block', color: '#374151', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }
 
@@ -82,6 +85,12 @@ export default function BewerkSpelerPage() {
         <a href="/beheer/spelers" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '13px' }}>← Players</a>
       </nav>
 
+      {isDemo && (
+        <div style={{ background: '#FEF9C3', borderBottom: '1px solid #FDE68A', padding: '10px 32px', textAlign: 'center' }}>
+          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>🔍 Demo mode — read only</span>
+        </div>
+      )}
+
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
@@ -96,11 +105,11 @@ export default function BewerkSpelerPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <div>
                 <label style={labelStyle}>First name</label>
-                <input type="text" value={voornaam} onChange={e => setVoornaam(e.target.value)} style={inputStyle} required />
+                <input type="text" value={voornaam} onChange={e => setVoornaam(e.target.value)} style={inputStyle} required readOnly={isDemo} />
               </div>
               <div>
                 <label style={labelStyle}>Last name</label>
-                <input type="text" value={achternaam} onChange={e => setAchternaam(e.target.value)} style={inputStyle} required />
+                <input type="text" value={achternaam} onChange={e => setAchternaam(e.target.value)} style={inputStyle} required readOnly={isDemo} />
               </div>
             </div>
 
@@ -108,8 +117,8 @@ export default function BewerkSpelerPage() {
               <label style={labelStyle}>Gender</label>
               <div style={{ display: 'flex', gap: '16px' }}>
                 {[{ val: 'M', label: 'Man' }, { val: 'V', label: 'Woman' }].map(opt => (
-                  <label key={opt.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: '#374151' }}>
-                    <input type="radio" value={opt.val} checked={geslacht === opt.val} onChange={() => setGeslacht(opt.val as 'M' | 'V')} />
+                  <label key={opt.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: isDemo ? 'not-allowed' : 'pointer', fontSize: '14px', color: '#374151' }}>
+                    <input type="radio" value={opt.val} checked={geslacht === opt.val} onChange={() => !isDemo && setGeslacht(opt.val as 'M' | 'V')} disabled={isDemo} />
                     {opt.label}
                   </label>
                 ))}
@@ -118,17 +127,17 @@ export default function BewerkSpelerPage() {
 
             <div style={{ marginBottom: '20px' }}>
               <label style={labelStyle}>Email address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} required />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} required readOnly={isDemo} />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
               <label style={labelStyle}>WhatsApp <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span></label>
-              <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+32 ..." style={inputStyle} />
+              <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+32 ..." style={inputStyle} readOnly={isDemo} />
             </div>
 
             <div style={{ marginBottom: '28px' }}>
               <label style={labelStyle}>Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} style={inputStyle}>
+              <select value={status} onChange={e => setStatus(e.target.value)} style={inputStyle} disabled={isDemo}>
                 <option value="Actief">Active</option>
                 <option value="Afgemeld">Unsubscribed</option>
                 <option value="Geblokkeerd">Blocked</option>
@@ -143,16 +152,22 @@ export default function BewerkSpelerPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button type="submit" disabled={opslaan} style={{ background: '#E8C547', color: '#0A1628', padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>
-                  {opslaan ? 'Saving...' : 'Save changes'}
+                <button
+                  type="submit"
+                  disabled={opslaan || isDemo}
+                  style={{ background: isDemo ? '#E5E7EB' : '#E8C547', color: isDemo ? '#9CA3AF' : '#0A1628', padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: isDemo ? 'not-allowed' : 'pointer' }}
+                >
+                  {isDemo ? '🔒 Read only' : opslaan ? 'Saving...' : 'Save changes'}
                 </button>
                 <a href="/beheer/spelers" style={{ padding: '12px 20px', borderRadius: '8px', textDecoration: 'none', fontSize: '15px', color: '#6B7280', background: '#F3F4F6' }}>
-                  Cancel
+                  Back
                 </a>
               </div>
-              <button type="button" onClick={handleVerwijderen} style={{ background: 'transparent', border: 'none', color: '#DC2626', fontSize: '14px', cursor: 'pointer', fontWeight: 600 }}>
-                Delete player
-              </button>
+              {!isDemo && (
+                <button type="button" onClick={handleVerwijderen} style={{ background: 'transparent', border: 'none', color: '#DC2626', fontSize: '14px', cursor: 'pointer', fontWeight: 600 }}>
+                  Delete player
+                </button>
+              )}
             </div>
 
           </form>
