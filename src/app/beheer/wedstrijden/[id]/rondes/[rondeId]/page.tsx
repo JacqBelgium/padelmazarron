@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
+import { useDemo } from '@/lib/useDemo'
 
 interface SpelerInfo { id: string; voornaam: string; achternaam: string }
 interface SetInfo {
@@ -20,6 +21,7 @@ export default function RondeUitslagPage() {
   const [opslaan, setOpslaan] = useState<string | null>(null)
   const params = useParams()
   const supabase = createClient()
+  const { isDemo } = useDemo()
 
   useEffect(() => { laadData() }, [])
 
@@ -44,6 +46,7 @@ export default function RondeUitslagPage() {
   }
 
   async function updateSet(setId: string, games_team1: number, games_team2: number) {
+    if (isDemo) return
     setOpslaan(setId)
     await supabase.from('sets').update({ games_team1, games_team2, ingevoerd_op: new Date().toISOString() }).eq('id', setId)
     setOpslaan(null)
@@ -64,10 +67,16 @@ export default function RondeUitslagPage() {
         <a href={`/beheer/wedstrijden/${params.id}/schema`} style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '13px' }}>← Schedule</a>
       </nav>
 
+      {isDemo && (
+        <div style={{ background: '#FEF9C3', borderBottom: '1px solid #FDE68A', padding: '10px 32px', textAlign: 'center' }}>
+          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>🔍 Demo mode — read only. Entering results is not available in demo.</span>
+        </div>
+      )}
+
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
-          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Round {rondeNummer} — Enter results</h1>
+          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Round {rondeNummer} — {isDemo ? 'View results' : 'Enter results'}</h1>
         </div>
       </div>
 
@@ -89,6 +98,7 @@ export default function RondeUitslagPage() {
                   naamVan={naamVan}
                   opslaan={opslaan === set.id}
                   isEven={i % 2 === 0}
+                  isDemo={isDemo}
                   onOpslaan={(g1, g2) => updateSet(set.id, g1, g2)}
                 />
               ))}
@@ -101,10 +111,10 @@ export default function RondeUitslagPage() {
   )
 }
 
-function SetRij({ set, spelers, naamVan, opslaan, isEven, onOpslaan }: {
+function SetRij({ set, spelers, naamVan, opslaan, isEven, isDemo, onOpslaan }: {
   set: SetInfo; spelers: SpelerInfo[]
   naamVan: (spelers: SpelerInfo[], id: string) => string
-  opslaan: boolean; isEven: boolean
+  opslaan: boolean; isEven: boolean; isDemo: boolean
   onOpslaan: (g1: number, g2: number) => void
 }) {
   const [g1, setG1] = useState(set.games_team1?.toString() ?? '')
@@ -119,25 +129,32 @@ function SetRij({ set, spelers, naamVan, opslaan, isEven, onOpslaan }: {
       <span style={{ fontSize: '13px', color: '#374151', flex: 1, minWidth: '120px' }}>{team1}</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <input type="number" min={0} max={7} value={g1} onChange={e => setG1(e.target.value)}
-          style={{ width: '52px', padding: '6px 8px', border: '1px solid #E5E7EB', borderRadius: '6px', fontSize: '15px', textAlign: 'center', fontWeight: 700 }} />
+          readOnly={isDemo}
+          style={{ width: '52px', padding: '6px 8px', border: '1px solid #E5E7EB', borderRadius: '6px', fontSize: '15px', textAlign: 'center', fontWeight: 700, background: isDemo ? '#F9FAFB' : '#ffffff' }} />
         <span style={{ color: '#9CA3AF', fontWeight: 700 }}>—</span>
         <input type="number" min={0} max={7} value={g2} onChange={e => setG2(e.target.value)}
-          style={{ width: '52px', padding: '6px 8px', border: '1px solid #E5E7EB', borderRadius: '6px', fontSize: '15px', textAlign: 'center', fontWeight: 700 }} />
+          readOnly={isDemo}
+          style={{ width: '52px', padding: '6px 8px', border: '1px solid #E5E7EB', borderRadius: '6px', fontSize: '15px', textAlign: 'center', fontWeight: 700, background: isDemo ? '#F9FAFB' : '#ffffff' }} />
       </div>
       <span style={{ fontSize: '13px', color: '#374151', flex: 1, minWidth: '120px', textAlign: 'right' }}>{team2}</span>
-      <button
-        onClick={() => onOpslaan(+g1, +g2)}
-        disabled={opslaan || g1 === '' || g2 === ''}
-        style={{
-          background: opgeslagen ? '#DCFCE7' : '#E8C547',
-          color: opgeslagen ? '#166534' : '#0A1628',
-          padding: '6px 16px', borderRadius: '6px', border: 'none',
-          fontWeight: 700, fontSize: '12px', cursor: 'pointer',
-          opacity: opslaan ? 0.7 : 1,
-        }}
-      >
-        {opslaan ? '...' : opgeslagen ? '✓ Saved' : 'Save'}
-      </button>
+      {!isDemo && (
+        <button
+          onClick={() => onOpslaan(+g1, +g2)}
+          disabled={opslaan || g1 === '' || g2 === ''}
+          style={{
+            background: opgeslagen ? '#DCFCE7' : '#E8C547',
+            color: opgeslagen ? '#166534' : '#0A1628',
+            padding: '6px 16px', borderRadius: '6px', border: 'none',
+            fontWeight: 700, fontSize: '12px', cursor: 'pointer',
+            opacity: opslaan ? 0.7 : 1,
+          }}
+        >
+          {opslaan ? '...' : opgeslagen ? '✓ Saved' : 'Save'}
+        </button>
+      )}
+      {isDemo && opgeslagen && (
+        <span style={{ color: '#166534', fontSize: '12px', fontWeight: 700 }}>✓ {set.games_team1} — {set.games_team2}</span>
+      )}
     </div>
   )
 }
