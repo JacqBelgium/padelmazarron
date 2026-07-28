@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useDemo } from '@/lib/useDemo'
 import type { Wedstrijd } from '@/types/database'
 
 export default function WedstrijdenPage() {
   const [wedstrijden, setWedstrijden] = useState<Wedstrijd[]>([])
   const [laden, setLaden] = useState(true)
   const supabase = createClient()
+  const { isDemo } = useDemo()
 
   useEffect(() => { laadWedstrijden() }, [])
 
@@ -46,15 +48,23 @@ export default function WedstrijdenPage() {
         <a href="/beheer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '13px' }}>← Dashboard</a>
       </nav>
 
+      {isDemo && (
+        <div style={{ background: '#FEF9C3', borderBottom: '1px solid #FDE68A', padding: '10px 32px', textAlign: 'center' }}>
+          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>🔍 Demo mode — read only</span>
+        </div>
+      )}
+
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
             <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Competitions</h1>
           </div>
-          <a href="/beheer/wedstrijden/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
-            + New competition
-          </a>
+          {!isDemo && (
+            <a href="/beheer/wedstrijden/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
+              + New competition
+            </a>
+          )}
         </div>
       </div>
 
@@ -62,9 +72,11 @@ export default function WedstrijdenPage() {
         {wedstrijden.length === 0 ? (
           <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '60px', textAlign: 'center' }}>
             <p style={{ color: '#9CA3AF', marginBottom: '20px' }}>No competitions yet.</p>
-            <a href="/beheer/wedstrijden/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>
-              Create first competition
-            </a>
+            {!isDemo && (
+              <a href="/beheer/wedstrijden/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>
+                Create first competition
+              </a>
+            )}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -83,7 +95,7 @@ export default function WedstrijdenPage() {
                       {statusLabel(w.status)}
                     </span>
                     <a href={`/beheer/wedstrijden/${w.id}`} style={{ color: '#1F5C99', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
-                      Manage →
+                      {isDemo ? 'View →' : 'Manage →'}
                     </a>
                   </div>
                 </div>
