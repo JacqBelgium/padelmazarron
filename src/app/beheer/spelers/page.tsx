@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useDemo } from '@/lib/useDemo'
 import type { Speler } from '@/types/database'
 
 export default function SpelersPage() {
   const [spelers, setSpelers] = useState<Speler[]>([])
   const [laden, setLaden] = useState(true)
   const supabase = createClient()
+  const { isDemo } = useDemo()
 
   useEffect(() => { laadSpelers() }, [])
 
@@ -29,36 +31,40 @@ export default function SpelersPage() {
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', minHeight: '100vh', background: '#F5F7FA' }}>
 
-      {/* Nav */}
       <nav style={{ background: '#0A1628', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ color: '#E8C547', fontWeight: 900, fontSize: '18px' }}>RacketComp</div>
         <a href="/beheer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '13px' }}>← Dashboard</a>
       </nav>
 
-      {/* Header */}
+      {isDemo && (
+        <div style={{ background: '#FEF9C3', borderBottom: '1px solid #FDE68A', padding: '10px 32px', textAlign: 'center' }}>
+          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>🔍 Demo mode — read only</span>
+        </div>
+      )}
+
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
             <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Players</h1>
           </div>
-          
-            <a href="/beheer/spelers/nieuw"
-            style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}
-          >
-            + Add player
-          </a>
+          {!isDemo && (
+            <a href="/beheer/spelers/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
+              + Add player
+            </a>
+          )}
         </div>
       </div>
 
-      {/* Content */}
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 32px' }}>
         {spelers.length === 0 ? (
           <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '60px', textAlign: 'center' }}>
             <p style={{ color: '#9CA3AF', marginBottom: '20px' }}>No players added yet.</p>
-            <a href="/beheer/spelers/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
-              Add first player
-            </a>
+            {!isDemo && (
+              <a href="/beheer/spelers/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
+                Add first player
+              </a>
+            )}
           </div>
         ) : (
           <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
@@ -93,7 +99,7 @@ export default function SpelersPage() {
                     </td>
                     <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                       <a href={`/beheer/spelers/${speler.id}`} style={{ color: '#1F5C99', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
-                        Edit →
+                        {isDemo ? 'View →' : 'Edit →'}
                       </a>
                     </td>
                   </tr>
