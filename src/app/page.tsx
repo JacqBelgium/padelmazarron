@@ -148,12 +148,12 @@ export default function LandingPage() {
           </p>
 
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a href="#how" style={{
+            <a href="/login?demo=true" style={{
               background: '#E8C547', color: '#0A1628',
               padding: '16px 36px', borderRadius: '8px',
               textDecoration: 'none', fontWeight: 800, fontSize: '16px',
             }}>
-              See how it works →
+              🔍 Try demo
             </a>
             <a href="#find" style={{
               background: 'transparent', color: '#ffffff',

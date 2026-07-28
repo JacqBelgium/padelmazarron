@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -10,7 +10,15 @@ export default function LoginPage() {
   const [fout, setFout] = useState('')
   const [laden, setLaden] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (searchParams.get('demo') === 'true') {
+      setEmail('demo@racketcomp.eu')
+      setWachtwoord('Demo2026!')
+    }
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
