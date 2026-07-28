@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
+import { useDemo } from '@/lib/useDemo'
 import type { Wedstrijd, Speler, Deelname } from '@/types/database'
 
 export default function WedstrijdBeheerPage() {
@@ -16,6 +17,7 @@ export default function WedstrijdBeheerPage() {
   const [fout, setFout] = useState('')
   const params = useParams()
   const supabase = createClient()
+  const { isDemo } = useDemo()
   const id = params.id as string
 
   useEffect(() => { laadData() }, [])
@@ -35,7 +37,7 @@ export default function WedstrijdBeheerPage() {
   }
 
   function toggleSpeler(sid: string) {
-    if (wedstrijd?.status !== 'Concept') return
+    if (wedstrijd?.status !== 'Concept' || isDemo) return
     setGeselecteerd(prev => {
       const n = new Set(prev)
       if (n.has(sid)) n.delete(sid); else n.add(sid)
@@ -45,6 +47,7 @@ export default function WedstrijdBeheerPage() {
   }
 
   async function handleKlaar() {
+    if (isDemo) return
     const aantal = geselecteerd.size
     if (aantal === 0) { setFout('Select at least 4 players.'); return }
     if (aantal % 4 !== 0) { setFout(`${aantal} players selected — must be divisible by 4.`); return }
@@ -60,6 +63,7 @@ export default function WedstrijdBeheerPage() {
   }
 
   async function activeerWedstrijd() {
+    if (isDemo) return
     setOpslaan(true)
     const { error } = await supabase.from('wedstrijden').update({ status: 'Actief' }).eq('id', id)
     if (!error) { setWedstrijd(prev => prev ? { ...prev, status: 'Actief' } : null); setBericht('✓ Competition activated!') }
@@ -67,6 +71,7 @@ export default function WedstrijdBeheerPage() {
   }
 
   async function genereerSchemaActie() {
+    if (isDemo) return
     setOpslaan(true); setFout(''); setBericht('')
     const response = await fetch('/api/schema/genereer', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -96,6 +101,12 @@ export default function WedstrijdBeheerPage() {
         <a href="/beheer/wedstrijden" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '13px' }}>← Competitions</a>
       </nav>
 
+      {isDemo && (
+        <div style={{ background: '#FEF9C3', borderBottom: '1px solid #FDE68A', padding: '10px 32px', textAlign: 'center' }}>
+          <span style={{ color: '#854D0E', fontSize: '13px', fontWeight: 600 }}>🔍 Demo mode — read only</span>
+        </div>
+      )}
+
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
@@ -105,24 +116,25 @@ export default function WedstrijdBeheerPage() {
               {wedstrijd.status === 'Actief' ? 'Active' : wedstrijd.status === 'Afgesloten' ? 'Closed' : 'Draft'}
             </span>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {wedstrijd.status === 'Concept' && deelbaarDoor4 && deelnames.length === aantal && (
-              <button onClick={activeerWedstrijd} disabled={opslaan} style={{ background: '#16A34A', color: '#ffffff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
-                ✓ Activate
-              </button>
-            )}
-            {wedstrijd.status === 'Actief' && (
-              <button onClick={genereerSchemaActie} disabled={opslaan} style={{ background: '#E8C547', color: '#0A1628', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
-                ⚡ Generate schedule
-              </button>
-            )}
-          </div>
+          {!isDemo && (
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {wedstrijd.status === 'Concept' && deelbaarDoor4 && deelnames.length === aantal && (
+                <button onClick={activeerWedstrijd} disabled={opslaan} style={{ background: '#16A34A', color: '#ffffff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                  ✓ Activate
+                </button>
+              )}
+              {wedstrijd.status === 'Actief' && (
+                <button onClick={genereerSchemaActie} disabled={opslaan} style={{ background: '#E8C547', color: '#0A1628', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                  ⚡ Generate schedule
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px' }}>
 
-        {/* Info */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {[
             { label: 'Start date', value: wedstrijd.datum_van },
@@ -137,7 +149,6 @@ export default function WedstrijdBeheerPage() {
           ))}
         </div>
 
-        {/* Navigation */}
         {wedstrijd.status === 'Actief' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginBottom: '24px' }}>
             {[
@@ -157,7 +168,6 @@ export default function WedstrijdBeheerPage() {
         {bericht && <div style={{ background: '#DCFCE7', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', color: '#166534', fontSize: '14px', fontWeight: 600 }}>{bericht}</div>}
         {fout && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', color: '#DC2626', fontSize: '14px' }}>⚠ {fout}</div>}
 
-        {/* Participants */}
         <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ padding: '16px 24px', borderBottom: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ color: '#0A1628', fontWeight: 800, fontSize: '15px', margin: 0 }}>Participants</h2>
@@ -167,14 +177,14 @@ export default function WedstrijdBeheerPage() {
           </div>
           <div>
             {alleSpelers.map((speler, i) => (
-              <label key={speler.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', borderBottom: '1px solid #F9FAFB', background: i % 2 === 0 ? '#ffffff' : '#FAFAFA', cursor: wedstrijd.status === 'Concept' ? 'pointer' : 'default' }}>
-                <input type="checkbox" checked={geselecteerd.has(speler.id)} onChange={() => toggleSpeler(speler.id)} disabled={wedstrijd.status !== 'Concept'} style={{ width: '16px', height: '16px', accentColor: '#1F5C99' }} />
+              <label key={speler.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', borderBottom: '1px solid #F9FAFB', background: i % 2 === 0 ? '#ffffff' : '#FAFAFA', cursor: wedstrijd.status === 'Concept' && !isDemo ? 'pointer' : 'default' }}>
+                <input type="checkbox" checked={geselecteerd.has(speler.id)} onChange={() => toggleSpeler(speler.id)} disabled={wedstrijd.status !== 'Concept' || isDemo} style={{ width: '16px', height: '16px', accentColor: '#1F5C99' }} />
                 <span style={{ fontWeight: 600, color: '#0A1628', fontSize: '14px', flex: 1 }}>{speler.voornaam} {speler.achternaam}</span>
                 <span style={{ color: '#9CA3AF', fontSize: '12px' }}>{speler.geslacht === 'M' ? 'Man' : 'Woman'}</span>
               </label>
             ))}
           </div>
-          {wedstrijd.status === 'Concept' && (
+          {wedstrijd.status === 'Concept' && !isDemo && (
             <div style={{ padding: '16px 24px', borderTop: '1px solid #F3F4F6', display: 'flex', gap: '12px' }}>
               <button onClick={handleKlaar} disabled={opslaan || aantal === 0} style={{ background: '#1F5C99', color: '#ffffff', padding: '10px 24px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
                 {opslaan ? 'Saving...' : `Save participants (${aantal})`}
