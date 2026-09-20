@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 
   // Email sturen
   await resend.emails.send({
-    from: 'noreply@racketcomp.eu',
+    from: 'noreply@pickmynumbers.eu',
     to: 'jacqvandersteen@gmail.com',
     subject: `RacketComp Weekly Update — ${new Date().toLocaleDateString('nl-BE')}`,
     html: `
