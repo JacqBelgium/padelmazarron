@@ -135,7 +135,7 @@ export default function LandingPage() {
 
           <h1 style={{
             color: '#fff', fontFamily: 'Inter, sans-serif',
-            fontSize: 'clamp(42px, 6vw, 76px)', fontWeight: 'bold',
+            fontSize: 'clamp(42px, 6vw, 76px)',
             lineHeight: 0.98, marginBottom: '24px',
             letterSpacing: '-0.065em', maxWidth: '800px',
           }}>
