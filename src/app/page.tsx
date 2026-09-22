@@ -134,12 +134,12 @@ export default function LandingPage() {
           </div>
 
           <h1 style={{
-            color: '#ffffff', fontSize: 'clamp(36px, 6vw, 72px)',
+            color: '#ffffff', fontSize: 'clamp(48px, 6vw, 56px)',
             fontWeight: 900, lineHeight: 1.1, marginBottom: '24px',
-            letterSpacing: '-2px', maxWidth: '800px',
+            letterSpacing: '-1px', maxWidth: '800px',
           }}>
             Run your racket sport<br />
-            <span style={{ color: '#E8C547' }}>competition.</span>
+            <span style={{ color: '#ffffff' }}>competition.</span>
           </h1>
 
           <p style={{
