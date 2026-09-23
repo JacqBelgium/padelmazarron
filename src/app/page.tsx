@@ -112,7 +112,7 @@ export default function LandingPage() {
             <a href="/login" style={{
               background: '#E8C547', color: '#0A1628', padding: '8px 20px',
               borderRadius: '6px', textDecoration: 'none', fontSize: '14px', fontWeight: 700,
-            }}>Admin login</a>
+            }}>Club Admin</a>
           </div>
         </nav>
 
@@ -166,7 +166,7 @@ export default function LandingPage() {
               textDecoration: 'none', fontWeight: 600, fontSize: '16px',
               border: '1px solid rgba(255,255,255,0.2)',
             }}>
-              Find your club
+              My Competition
             </a>
           </div>
 
