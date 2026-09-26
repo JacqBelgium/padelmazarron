@@ -46,8 +46,9 @@ export async function POST(request: NextRequest) {
     })
 
     const { naam, email, sport, contactpersoon } = body ?? {}
+    const resolvedContactpersoon = body?.contactpersoon || body?.naam
 
-    if (!naam || !email || !sport || !contactpersoon) {
+    if (!naam || !email || !sport) {
       console.error('clubs/onboard validation failed: missing required fields', {
         naam,
         email,
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
         contactpersoon,
       })
       return NextResponse.json(
-        { fout: 'naam, email, sport en contactpersoon zijn verplicht' },
+        { fout: 'naam, email en sport zijn verplicht' },
         { status: 400 }
       )
     }
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     const trimmedNaam = String(naam).trim()
     const trimmedEmail = String(email).trim()
     const trimmedSport = String(sport).trim()
-    const trimmedContactpersoon = String(contactpersoon).trim()
+    const trimmedContactpersoon = String(resolvedContactpersoon ?? trimmedNaam).trim()
 
     if (!trimmedNaam || !trimmedEmail || !trimmedSport || !trimmedContactpersoon) {
       console.error('clubs/onboard validation failed: empty required fields after trim', {
