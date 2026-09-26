@@ -35,9 +35,25 @@ function isValidEmail(email: string) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('clubs/onboard request received:', {
+      rawBody: body,
+      fields: {
+        naam: body?.naam,
+        email: body?.email,
+        sport: body?.sport,
+        contactpersoon: body?.contactpersoon,
+      },
+    })
+
     const { naam, email, sport, contactpersoon } = body ?? {}
 
     if (!naam || !email || !sport || !contactpersoon) {
+      console.error('clubs/onboard validation failed: missing required fields', {
+        naam,
+        email,
+        sport,
+        contactpersoon,
+      })
       return NextResponse.json(
         { fout: 'naam, email, sport en contactpersoon zijn verplicht' },
         { status: 400 }
@@ -50,6 +66,12 @@ export async function POST(request: NextRequest) {
     const trimmedContactpersoon = String(contactpersoon).trim()
 
     if (!trimmedNaam || !trimmedEmail || !trimmedSport || !trimmedContactpersoon) {
+      console.error('clubs/onboard validation failed: empty required fields after trim', {
+        trimmedNaam,
+        trimmedEmail,
+        trimmedSport,
+        trimmedContactpersoon,
+      })
       return NextResponse.json(
         { fout: 'naam, email, sport en contactpersoon zijn verplicht' },
         { status: 400 }
@@ -57,6 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isValidEmail(trimmedEmail)) {
+      console.error('clubs/onboard validation failed: invalid email', { email: trimmedEmail })
       return NextResponse.json({ fout: 'Ongeldig e-mailadres' }, { status: 400 })
     }
 
@@ -76,6 +99,7 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (clubError || !clubData) {
+        console.error('clubs/onboard Supabase error creating club', { clubError, clubData })
         throw clubError ?? new Error('Kon club niet aanmaken')
       }
 
@@ -93,6 +117,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (authError || !authData?.user) {
+        console.error('clubs/onboard Supabase error creating auth user', { authError, authData })
         throw authError ?? new Error('Kon Supabase-auth user niet aanmaken')
       }
 
@@ -107,6 +132,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (gebruikerError) {
+        console.error('clubs/onboard Supabase error creating gebruiker', { gebruikerError })
         throw gebruikerError
       }
 
@@ -126,6 +152,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (emailResponse.error) {
+        console.error('clubs/onboard Resend error sending welcome mail', { resendError: emailResponse.error })
         throw new Error(emailResponse.error.message || 'E-mail kon niet worden verzonden')
       }
 
