@@ -125,15 +125,18 @@ export async function POST(request: NextRequest) {
       }
       authError = createUserResult.error
 
-      if (authError && authError.message?.includes('email_exists')) {
+      const authErrorMessage = authError?.message?.toLowerCase() ?? ''
+
+      if (authError && authErrorMessage.includes('email_exists')) {
         console.warn('clubs/onboard user already exists, fetching existing auth user by email', {
           email: trimmedEmail,
           authError,
         })
 
         const { data: existingUserData, error: existingUserError } = await admin.auth.admin.listUsers()
-
-        const existingUser = existingUserData?.users?.find((user) => user.email?.toLowerCase() === trimmedEmail.toLowerCase())
+        const existingUser = (existingUserData?.users ?? []).find(
+          (user) => user.email?.toLowerCase() === trimmedEmail.toLowerCase()
+        )
 
         if (existingUserError || !existingUser) {
           console.error('clubs/onboard Supabase error finding existing auth user', {
