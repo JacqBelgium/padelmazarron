@@ -133,12 +133,11 @@ export async function POST(request: NextRequest) {
           authError,
         })
 
-        const { data: existingUserData, error: existingUserError } = await admin.auth.admin.listUsers()
-        const existingUser = (existingUserData?.users ?? []).find(
-          (user) => user.email?.toLowerCase() === trimmedEmail.toLowerCase()
-        )
+        const existingUserLookup = await (admin.auth.admin as any).getUserByEmail(trimmedEmail)
+        const existingUserData = existingUserLookup?.data
+        const existingUserError = existingUserLookup?.error
 
-        if (existingUserError || !existingUser) {
+        if (existingUserError || !existingUserData?.user) {
           console.error('clubs/onboard Supabase error finding existing auth user', {
             existingUserError,
             email: trimmedEmail,
@@ -146,7 +145,7 @@ export async function POST(request: NextRequest) {
           throw existingUserError ?? new Error('Kon bestaande auth-user niet ophalen')
         }
 
-        authData = { user: { id: existingUser.id } }
+        authData = { user: { id: existingUserData.user.id } }
       }
 
       if (!authData?.user) {
