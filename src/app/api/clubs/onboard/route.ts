@@ -106,7 +106,10 @@ export async function POST(request: NextRequest) {
 
       clubId = clubData.id
 
-      const { data: authData, error: authError } = await admin.auth.admin.createUser({
+      let authData: { user: { id: string } } | null = null
+      let authError: { message?: string; status?: number } | null = null
+
+      const createUserResult = await admin.auth.admin.createUser({
         email: trimmedEmail,
         password: temporaryPassword,
         email_confirm: true,
@@ -117,7 +120,33 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      if (authError || !authData?.user) {
+      if (createUserResult.data?.user) {
+        authData = { user: { id: createUserResult.data.user.id } }
+      }
+      authError = createUserResult.error
+
+      if (authError && authError.message?.includes('email_exists')) {
+        console.warn('clubs/onboard user already exists, fetching existing auth user by email', {
+          email: trimmedEmail,
+          authError,
+        })
+
+        const { data: existingUserData, error: existingUserError } = await admin.auth.admin.listUsers()
+
+        const existingUser = existingUserData?.users?.find((user) => user.email?.toLowerCase() === trimmedEmail.toLowerCase())
+
+        if (existingUserError || !existingUser) {
+          console.error('clubs/onboard Supabase error finding existing auth user', {
+            existingUserError,
+            email: trimmedEmail,
+          })
+          throw existingUserError ?? new Error('Kon bestaande auth-user niet ophalen')
+        }
+
+        authData = { user: { id: existingUser.id } }
+      }
+
+      if (!authData?.user) {
         console.error('clubs/onboard Supabase error creating auth user', { authError, authData })
         throw authError ?? new Error('Kon Supabase-auth user niet aanmaken')
       }
