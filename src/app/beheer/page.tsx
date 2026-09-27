@@ -99,6 +99,7 @@ export default function BeheerPage() {
       {/* Header */}
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>ADMIN</p>
           <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>{clubNaam}</h1>
         </div>
       </div>
