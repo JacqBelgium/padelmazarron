@@ -1,32 +1,57 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function BeheerPage() {
   const [email, setEmail] = useState<string | null>(null)
+  const [clubNaam, setClubNaam] = useState('')
   const [laden, setLaden] = useState(true)
   const [isDemo, setIsDemo] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) {
-        router.push('/login')
-      } else {
+    async function laadClubgegevens() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
+
         setEmail(user.email ?? null)
-        const { data } = await supabase
+
+        const { data: gebruiker } = await supabase
           .from('gebruikers')
-          .select('is_demo')
+          .select('is_demo, club_id')
           .eq('auth_id', user.id)
           .single()
-        setIsDemo(data?.is_demo ?? false)
+
+        setIsDemo(gebruiker?.is_demo ?? false)
+
+        if (gebruiker?.club_id) {
+          const { data: club } = await supabase
+            .from('clubs')
+            .select('naam')
+            .eq('id', gebruiker.club_id)
+            .single()
+
+          setClubNaam(club?.naam ?? 'Club')
+        } else {
+          setClubNaam('Club')
+        }
+      } catch (error) {
+        console.error('Could not load club details:', error)
+        setClubNaam('Club')
+      } finally {
         setLaden(false)
       }
-    })
-  }, [])
+    }
+
+    void laadClubgegevens()
+  }, [router, supabase])
 
   async function uitloggen() {
     await supabase.auth.signOut()
@@ -74,8 +99,7 @@ export default function BeheerPage() {
       {/* Header */}
       <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
-          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Club Admin</h1>
+          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>{clubNaam}</h1>
         </div>
       </div>
 
