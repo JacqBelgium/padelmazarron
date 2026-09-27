@@ -64,6 +64,9 @@ function LoginForm() {
         <button type="submit" disabled={laden} style={{ width: '100%', padding: '14px', background: '#E8C547', color: '#0A1628', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '15px', cursor: laden ? 'not-allowed' : 'pointer', opacity: laden ? 0.7 : 1 }}>
           {laden ? 'Signing in...' : 'Sign in'}
         </button>
+        <a href="/forgot-password" style={{ display: 'block', color: '#E8C547', textAlign: 'center', fontSize: '13px', marginTop: '16px', textDecoration: 'none' }}>
+          Forgot password?
+        </a>
       </form>
 
       <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
