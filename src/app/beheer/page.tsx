@@ -78,6 +78,9 @@ export default function BeheerPage() {
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{email}</span>
+          <a href="/beheer/profiel" style={{ color: '#E8C547', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
+            Change password
+          </a>
           <button
             onClick={uitloggen}
             style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)', padding: '6px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
