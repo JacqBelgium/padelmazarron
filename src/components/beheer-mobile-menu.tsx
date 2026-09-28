@@ -1,16 +1,54 @@
 'use client'
 
-import { useState } from 'react'
-
-const links = [
-  { href: '/beheer', label: 'Dashboard' },
-  { href: '/beheer/spelers', label: 'Players' },
-  { href: '/beheer/wedstrijden', label: 'Competitions' },
-  { href: '/beheer/profiel', label: 'Change password' },
-]
+import { useEffect, useMemo, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function BeheerMobileMenu() {
   const [open, setOpen] = useState(false)
+  const [activeCompetitionId, setActiveCompetitionId] = useState<string | null>(null)
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    async function loadActiveCompetition() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: gebruiker } = await supabase
+          .from('gebruikers')
+          .select('club_id')
+          .eq('auth_id', user.id)
+          .single()
+
+        if (!gebruiker?.club_id) return
+
+        const { data: wedstrijd } = await supabase
+          .from('wedstrijden')
+          .select('id')
+          .eq('club_id', gebruiker.club_id)
+          .eq('status', 'Actief')
+          .limit(1)
+          .maybeSingle()
+
+        setActiveCompetitionId(wedstrijd?.id ?? null)
+      } catch (error) {
+        console.error('Could not load active competition for menu:', error)
+        setActiveCompetitionId(null)
+      }
+    }
+
+    void loadActiveCompetition()
+  }, [supabase])
+
+  const links = [
+    { href: '/beheer', label: 'Dashboard' },
+    { href: '/beheer/spelers', label: 'Players' },
+    { href: '/beheer/wedstrijden', label: 'Competitions' },
+    ...(activeCompetitionId
+      ? [{ href: `/beheer/wedstrijden/${activeCompetitionId}/stand`, label: 'Standings' }]
+      : []),
+    { href: '/beheer/profiel', label: 'Change password' },
+  ]
 
   return (
     <div className="beheer-mobile-menu">
@@ -40,6 +78,11 @@ export default function BeheerMobileMenu() {
                 {link.label}
               </a>
             ))}
+            {!activeCompetitionId && (
+              <span className="beheer-mobile-menu__disabled-link" aria-disabled="true">
+                No active competition
+              </span>
+            )}
           </nav>
         </>
       )}

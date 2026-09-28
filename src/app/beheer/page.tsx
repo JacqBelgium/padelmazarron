@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 export default function BeheerPage() {
   const [email, setEmail] = useState<string | null>(null)
   const [clubNaam, setClubNaam] = useState('')
+  const [actieveWedstrijdId, setActieveWedstrijdId] = useState<string | null>(null)
   const [laden, setLaden] = useState(true)
   const [isDemo, setIsDemo] = useState(false)
   const router = useRouter()
@@ -32,15 +33,22 @@ export default function BeheerPage() {
         setIsDemo(gebruiker?.is_demo ?? false)
 
         if (gebruiker?.club_id) {
-          const { data: club } = await supabase
-            .from('clubs')
-            .select('naam')
-            .eq('id', gebruiker.club_id)
-            .single()
+          const [{ data: club }, { data: wedstrijd }] = await Promise.all([
+            supabase.from('clubs').select('naam').eq('id', gebruiker.club_id).single(),
+            supabase
+              .from('wedstrijden')
+              .select('id')
+              .eq('club_id', gebruiker.club_id)
+              .eq('status', 'Actief')
+              .limit(1)
+              .maybeSingle(),
+          ])
 
           setClubNaam(club?.naam ?? 'Club')
+          setActieveWedstrijdId(wedstrijd?.id ?? null)
         } else {
           setClubNaam('Club')
+          setActieveWedstrijdId(null)
         }
       } catch (error) {
         console.error('Could not load club details:', error)
@@ -126,6 +134,22 @@ export default function BeheerPage() {
               <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Schedule and rounds</p>
             </div>
           </a>
+
+          {actieveWedstrijdId ? (
+            <a href={`/beheer/wedstrijden/${actieveWedstrijdId}/stand`} style={{ textDecoration: 'none' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
+                <div style={{ fontSize: '32px', marginBottom: '16px' }}>🏆</div>
+                <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Standings</h3>
+                <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>View current competition rankings for men and women</p>
+              </div>
+            </a>
+          ) : (
+            <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>🏆</div>
+              <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Standings</h3>
+              <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>No active competition</p>
+            </div>
+          )}
 
         </div>
       </div>

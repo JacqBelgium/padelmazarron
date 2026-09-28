@@ -191,6 +191,12 @@
     text-decoration: none;
   }
 
+  .beheer-mobile-menu__disabled-link {
+    padding: 12px 14px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 14px;
+  }
+
   nav.beheer-mobile-menu__links a:hover,
   nav.beheer-mobile-menu__links a:focus-visible {
     background: rgba(232, 197, 71, 0.12);
