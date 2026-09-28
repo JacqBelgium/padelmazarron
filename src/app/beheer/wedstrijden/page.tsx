@@ -103,7 +103,7 @@ export default function WedstrijdenPage() {
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 32px' }}>
         {wedstrijden.length === 0 ? (
-          <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '60px', textAlign: 'center' }}>
+          <div className="wedstrijd-empty-state" style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '60px', textAlign: 'center' }}>
             <p style={{ color: '#9CA3AF', marginBottom: '20px' }}>No competitions yet.</p>
             {!isDemo && (
               <a href="/beheer/wedstrijden/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>

@@ -127,14 +127,6 @@ export default function BeheerPage() {
             </div>
           </a>
 
-          <a href="/beheer/uitslagen" style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
-              <div style={{ fontSize: '32px', marginBottom: '16px' }}>📊</div>
-              <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Results</h3>
-              <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Enter and correct scores</p>
-            </div>
-          </a>
-
         </div>
       </div>
 
