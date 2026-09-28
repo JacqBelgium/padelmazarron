@@ -1,0 +1,177 @@
+.beheer-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  nav:not(.beheer-mobile-menu__links) {
+    min-height: 60px;
+    padding: 10px 16px !important;
+  }
+
+  nav:not(.beheer-mobile-menu__links) > :not(a[aria-label="RacketComp home"]) {
+    display: none !important;
+  }
+
+  nav:not(.beheer-mobile-menu__links) > a[aria-label="RacketComp home"] {
+    font-size: 16px !important;
+  }
+
+  nav:not(.beheer-mobile-menu__links) > a[aria-label="RacketComp home"] svg {
+    width: 34px;
+    height: 34px;
+  }
+
+  [style*="max-width: 900px"],
+  [style*="max-width: 600px"] {
+    max-width: 100% !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  [style*="align-items: flex-end"] {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    gap: 16px;
+  }
+
+  [style*="display: flex"][style*="gap: 12px"] {
+    flex-wrap: wrap;
+  }
+
+  form {
+    width: 100%;
+  }
+
+  form input:not([type="checkbox"]):not([type="radio"]),
+  form select,
+  form textarea {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  form button[type="submit"] {
+    width: 100%;
+  }
+
+  form > div[style*="display: flex"] {
+    flex-direction: column;
+  }
+
+  form > div[style*="display: flex"] > a,
+  form > div[style*="display: flex"] > button {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .beheer-table-scroll {
+    border-radius: 12px;
+  }
+
+  .beheer-table-scroll table {
+    min-width: 620px;
+    white-space: nowrap;
+  }
+
+  .beheer-mobile-menu {
+    display: block;
+  }
+}
+
+@media (min-width: 768px) {
+  .beheer-mobile-menu {
+    display: none;
+  }
+}
+
+.beheer-mobile-menu__toggle {
+  display: none;
+}
+
+.beheer-mobile-menu__backdrop {
+  display: none;
+}
+
+.beheer-mobile-menu__links {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .beheer-mobile-menu__toggle {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 120;
+    display: flex;
+    width: 42px;
+    height: 42px;
+    padding: 10px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    border: 1px solid rgba(232, 197, 71, 0.45);
+    border-radius: 8px;
+    background: #0A1628;
+    cursor: pointer;
+  }
+
+  .beheer-mobile-menu__toggle span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: #E8C547;
+  }
+
+  .beheer-mobile-menu__backdrop {
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: rgba(10, 22, 40, 0.35);
+  }
+
+  nav.beheer-mobile-menu__links {
+    position: fixed;
+    z-index: 110;
+    top: 62px;
+    right: 16px;
+    display: flex;
+    min-width: 220px;
+    padding: 8px;
+    flex-direction: column;
+    gap: 2px;
+    border: 1px solid rgba(232, 197, 71, 0.3);
+    border-radius: 10px;
+    background: #0A1628;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  nav.beheer-mobile-menu__links a {
+    padding: 12px 14px;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    text-decoration: none;
+  }
+
+  nav.beheer-mobile-menu__links a:hover,
+  nav.beheer-mobile-menu__links a:focus-visible {
+    background: rgba(232, 197, 71, 0.12);
+    color: #E8C547;
+  }
+}

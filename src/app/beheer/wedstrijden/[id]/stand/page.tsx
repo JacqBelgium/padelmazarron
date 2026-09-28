@@ -72,7 +72,7 @@ export default function PuntenstandPage() {
         {rijen.length === 0 ? (
           <p style={{ color: '#9CA3AF', fontSize: '14px' }}>No results yet.</p>
         ) : (
-          <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
+          <div className="beheer-table-scroll" style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#0A1628' }}>
