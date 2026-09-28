@@ -14,12 +14,39 @@ export default function SpelersPage() {
   useEffect(() => { laadSpelers() }, [])
 
   async function laadSpelers() {
-    const { data } = await supabase
-      .from('spelers')
-      .select('*')
-      .order('achternaam')
-    setSpelers(data ?? [])
-    setLaden(false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setSpelers([])
+        return
+      }
+
+      const { data: gebruiker, error: gebruikerError } = await supabase
+        .from('gebruikers')
+        .select('club_id')
+        .eq('auth_id', user.id)
+        .single()
+
+      if (gebruikerError || !gebruiker?.club_id) {
+        if (gebruikerError) console.error('Could not load user club:', gebruikerError)
+        setSpelers([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('spelers')
+        .select('*')
+        .eq('club_id', gebruiker.club_id)
+        .order('achternaam')
+
+      if (error) console.error('Could not load players:', error)
+      setSpelers(data ?? [])
+    } catch (error) {
+      console.error('Could not load players:', error)
+      setSpelers([])
+    } finally {
+      setLaden(false)
+    }
   }
 
   if (laden) return (

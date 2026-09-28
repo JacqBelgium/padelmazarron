@@ -14,12 +14,39 @@ export default function WedstrijdenPage() {
   useEffect(() => { laadWedstrijden() }, [])
 
   async function laadWedstrijden() {
-    const { data } = await supabase
-      .from('wedstrijden')
-      .select('*')
-      .order('created_at', { ascending: false })
-    setWedstrijden(data ?? [])
-    setLaden(false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setWedstrijden([])
+        return
+      }
+
+      const { data: gebruiker, error: gebruikerError } = await supabase
+        .from('gebruikers')
+        .select('club_id')
+        .eq('auth_id', user.id)
+        .single()
+
+      if (gebruikerError || !gebruiker?.club_id) {
+        if (gebruikerError) console.error('Could not load user club:', gebruikerError)
+        setWedstrijden([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('wedstrijden')
+        .select('*')
+        .eq('club_id', gebruiker.club_id)
+        .order('created_at', { ascending: false })
+
+      if (error) console.error('Could not load competitions:', error)
+      setWedstrijden(data ?? [])
+    } catch (error) {
+      console.error('Could not load competitions:', error)
+      setWedstrijden([])
+    } finally {
+      setLaden(false)
+    }
   }
 
   const statusKleur = (status: string) => {
