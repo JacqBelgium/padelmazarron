@@ -12,11 +12,12 @@ export async function POST(request: NextRequest) {
     )
 
     // Haal alle sets op met uitslagen
-    const { data: sets } = await admin
+    const { data: sets, error: setsError } = await admin
       .from('sets')
       .select(`
         id,
         set_nummer,
+        groep_id,
         games_team1,
         games_team2,
         team1_speler1_id,
@@ -28,17 +29,26 @@ export async function POST(request: NextRequest) {
       .not('games_team1', 'is', null)
       .not('games_team2', 'is', null)
 
-    if (!sets) return NextResponse.json({ fout: 'Geen sets gevonden' }, { status: 404 })
+    if (setsError) {
+      console.error('Sets query error:', setsError)
+      return NextResponse.json({ fout: 'Fout bij ophalen sets' }, { status: 500 })
+    }
+
+    if (!sets || sets.length === 0) return NextResponse.json({ fout: 'Geen sets gevonden' }, { status: 404 })
+
+    console.log('Totaal sets:', sets.length)
+    console.log('Eerste set groepen:', JSON.stringify(sets[0]?.groepen))
 
     // Filter op wedstrijd
-      const setsDezWedstrijd = sets.filter((s: any) =>
-  s.groepen?.rondes?.wedstrijd_id === wedstrijd_id
-  )
+    const setsDezWedstrijd = sets.filter((s: any) => {
+      const groepen = s.groepen
+      if (Array.isArray(groepen)) {
+        return groepen.some((g: any) => g.rondes?.wedstrijd_id === wedstrijd_id)
+      }
+      return groepen?.rondes?.wedstrijd_id === wedstrijd_id
+    })
 
-    // Voeg hier toe:
-     console.log('Totaal sets:', sets.length)
     console.log('Sets deze wedstrijd:', setsDezWedstrijd.length)
-    console.log('Eerste set groepen:', JSON.stringify(sets[0]?.groepen))
 
     // Verwijder bestaande punten
     await admin.from('punten').delete().eq('wedstrijd_id', wedstrijd_id)
@@ -51,7 +61,8 @@ export async function POST(request: NextRequest) {
       const g2 = set.games_team2
       const team1Wint = g1 > g2
 
-      const rondeId = (set.groepen as any)?.ronde_id
+      const groepen = set.groepen
+      const rondeId = Array.isArray(groepen) ? groepen[0]?.ronde_id : groepen?.ronde_id
 
       // Team 1 spelers
       nieuwePunten.push({
@@ -95,7 +106,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (nieuwePunten.length > 0) {
-      await admin.from('punten').insert(nieuwePunten)
+      const { error: insertError } = await admin.from('punten').insert(nieuwePunten)
+      if (insertError) console.error('Insert punten error:', insertError)
     }
 
     return NextResponse.json({
