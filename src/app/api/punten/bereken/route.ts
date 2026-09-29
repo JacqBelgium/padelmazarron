@@ -31,9 +31,14 @@ export async function POST(request: NextRequest) {
     if (!sets) return NextResponse.json({ fout: 'Geen sets gevonden' }, { status: 404 })
 
     // Filter op wedstrijd
-    const setsDezWedstrijd = sets.filter((s: any) =>
-      s.groepen?.rondes?.wedstrijd_id === wedstrijd_id
-    )
+      const setsDezWedstrijd = sets.filter((s: any) =>
+  s.groepen?.rondes?.wedstrijd_id === wedstrijd_id
+  )
+
+    // Voeg hier toe:
+     console.log('Totaal sets:', sets.length)
+    console.log('Sets deze wedstrijd:', setsDezWedstrijd.length)
+    console.log('Eerste set groepen:', JSON.stringify(sets[0]?.groepen))
 
     // Verwijder bestaande punten
     await admin.from('punten').delete().eq('wedstrijd_id', wedstrijd_id)
