@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       const team1Wint = g1 > g2
 
       const groepen = set.groepen
-      const rondeId = Array.isArray(groepen) ? groepen[0]?.ronde_id : groepen?.ronde_id
+      const rondeId = Array.isArray(groepen) ? (groepen[0] as any)?.ronde_id : (groepen as any)?.ronde_id
 
       // Team 1 spelers
       nieuwePunten.push({
