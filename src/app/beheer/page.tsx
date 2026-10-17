@@ -132,14 +132,14 @@ export default function BeheerPage() {
           {actieveWedstrijdId ? (
             <a href={`/beheer/wedstrijden/${actieveWedstrijdId}/stand`} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
-                <div style={{ fontSize: '32px', marginBottom: '16px' }}>🏆</div>
+                <div style={{ fontSize: '32px', marginBottom: '16px' }}>📊</div>
                 <h3 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Standings</h3>
                 <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>View current competition rankings for men and women</p>
               </div>
             </a>
           ) : (
             <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px' }}>
-              <div style={{ fontSize: '32px', marginBottom: '16px' }}>🏆</div>
+              <div style={{ fontSize: '32px', marginBottom: '16px' }}>📊</div>
               <h3 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Standings</h3>
               <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>No active competition</p>
             </div>
