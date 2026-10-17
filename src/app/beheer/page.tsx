@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 export default function BeheerPage() {
   const [email, setEmail] = useState<string | null>(null)
@@ -13,6 +14,7 @@ export default function BeheerPage() {
   const [isDemo, setIsDemo] = useState(false)
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const { primaryColor, secondaryColor } = useTenantContext()
 
   useEffect(() => {
     async function laadClubgegevens() {
@@ -68,8 +70,8 @@ export default function BeheerPage() {
   }
 
   if (laden) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
-      <div style={{ color: '#E8C547' }}>Loading...</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: primaryColor }}>
+      <div style={{ color: secondaryColor }}>Loading...</div>
     </div>
   )
 
@@ -79,7 +81,7 @@ export default function BeheerPage() {
       {/* Nav */}
       <TenantNav>
         <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{email}</span>
-        <a href="/beheer/profiel" style={{ color: '#E8C547', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
+        <a href="/beheer/profiel" style={{ color: secondaryColor, textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
           Change password
         </a>
         <button
@@ -100,9 +102,9 @@ export default function BeheerPage() {
       )}
 
       {/* Header */}
-      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>ADMIN</p>
+          <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>ADMIN</p>
           <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>{clubNaam}</h1>
         </div>
       </div>
@@ -114,7 +116,7 @@ export default function BeheerPage() {
           <a href="/beheer/spelers" style={{ textDecoration: 'none' }}>
             <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
               <div style={{ fontSize: '32px', marginBottom: '16px' }}>👥</div>
-              <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Players</h3>
+              <h3 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Players</h3>
               <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Manage competition participants</p>
             </div>
           </a>
@@ -122,7 +124,7 @@ export default function BeheerPage() {
           <a href="/beheer/wedstrijden" style={{ textDecoration: 'none' }}>
             <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
               <div style={{ fontSize: '32px', marginBottom: '16px' }}>🏆</div>
-              <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Competitions</h3>
+              <h3 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Competitions</h3>
               <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>Schedule and rounds</p>
             </div>
           </a>
@@ -131,14 +133,14 @@ export default function BeheerPage() {
             <a href={`/beheer/wedstrijden/${actieveWedstrijdId}/stand`} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px', cursor: 'pointer' }}>
                 <div style={{ fontSize: '32px', marginBottom: '16px' }}>🏆</div>
-                <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Standings</h3>
+                <h3 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Standings</h3>
                 <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>View current competition rankings for men and women</p>
               </div>
             </a>
           ) : (
             <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '28px' }}>
               <div style={{ fontSize: '32px', marginBottom: '16px' }}>🏆</div>
-              <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Standings</h3>
+              <h3 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', marginBottom: '6px' }}>Standings</h3>
               <p style={{ color: '#9CA3AF', fontSize: '14px', margin: 0 }}>No active competition</p>
             </div>
           )}
