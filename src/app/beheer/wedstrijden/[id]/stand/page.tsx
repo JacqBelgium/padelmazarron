@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
 import { useDemo } from '@/lib/useDemo'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 interface StandRij {
   speler_id: string; naam: string; geslacht: string
@@ -20,6 +21,7 @@ export default function PuntenstandPage() {
   const [bericht, setBericht] = useState('')
   const params = useParams()
   const supabase = createClient()
+  const { primaryColor, secondaryColor } = useTenantContext()
   const { isDemo } = useDemo()
   const id = params.id as string
 
@@ -69,16 +71,16 @@ export default function PuntenstandPage() {
   function StandTabel({ rijen, titel }: { rijen: StandRij[], titel: string }) {
     return (
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', marginBottom: '12px' }}>{titel}</h2>
+        <h2 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', marginBottom: '12px' }}>{titel}</h2>
         {rijen.length === 0 ? (
           <p style={{ color: '#9CA3AF', fontSize: '14px' }}>No results yet.</p>
         ) : (
           <div className="beheer-table-scroll" style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#0A1628' }}>
+                <tr style={{ background: primaryColor }}>
                   {['#', 'Player', 'Rounds', 'Sets won', 'Games'].map(h => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Player' ? 'left' : 'center', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Player' ? 'left' : 'center', color: secondaryColor, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -86,7 +88,7 @@ export default function PuntenstandPage() {
                 {rijen.map((rij, i) => (
                   <tr key={rij.speler_id} style={{ borderBottom: '1px solid #F3F4F6', background: i % 2 === 0 ? '#ffffff' : '#F9FAFB' }}>
                     <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: '#9CA3AF', fontSize: '14px' }}>{rij.positie}</td>
-                    <td style={{ padding: '12px 16px', fontWeight: 600, color: '#0A1628', fontSize: '14px' }}>{rij.naam}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, color: primaryColor, fontSize: '14px' }}>{rij.naam}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }}>{rij.rondes_gespeeld}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }}>{rij.totaal_sets}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: '#1F5C99', fontSize: '16px' }}>{rij.totaal_games}</td>
@@ -101,8 +103,8 @@ export default function PuntenstandPage() {
   }
 
   if (laden) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
-      <div style={{ color: '#E8C547' }}>Loading...</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: primaryColor }}>
+      <div style={{ color: secondaryColor }}>Loading...</div>
     </div>
   )
 
@@ -117,14 +119,14 @@ export default function PuntenstandPage() {
         </div>
       )}
 
-      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
+            <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
             <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Standings — {wedstrijdNaam}</h1>
           </div>
           {!isDemo && (
-            <button onClick={herbereken} disabled={berekenen} style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+            <button onClick={herbereken} disabled={berekenen} style={{ background: secondaryColor, color: primaryColor, padding: '10px 24px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
               {berekenen ? 'Calculating...' : '🔄 Recalculate'}
             </button>
           )}

@@ -5,11 +5,13 @@ import { createClient } from '@/lib/supabase/client'
 import { useDemo } from '@/lib/useDemo'
 import type { Wedstrijd } from '@/types/database'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 export default function WedstrijdenPage() {
   const [wedstrijden, setWedstrijden] = useState<Wedstrijd[]>([])
   const [laden, setLaden] = useState(true)
   const supabase = createClient()
+  const { primaryColor, secondaryColor } = useTenantContext()
   const { isDemo } = useDemo()
 
   useEffect(() => { laadWedstrijden() }, [])
@@ -63,8 +65,8 @@ export default function WedstrijdenPage() {
   }
 
   if (laden) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
-      <div style={{ color: '#E8C547' }}>Loading...</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: primaryColor }}>
+      <div style={{ color: secondaryColor }}>Loading...</div>
     </div>
   )
 
@@ -79,14 +81,14 @@ export default function WedstrijdenPage() {
         </div>
       )}
 
-      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
+            <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
             <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Competitions</h1>
           </div>
           {!isDemo && (
-            <a href="/beheer/wedstrijden/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
+            <a href="/beheer/wedstrijden/nieuw" style={{ background: secondaryColor, color: primaryColor, padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
               + New competition
             </a>
           )}
@@ -98,7 +100,7 @@ export default function WedstrijdenPage() {
           <div className="wedstrijd-empty-state" style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '60px', textAlign: 'center' }}>
             <p style={{ color: '#9CA3AF', marginBottom: '20px' }}>No competitions yet.</p>
             {!isDemo && (
-              <a href="/beheer/wedstrijden/nieuw" style={{ background: '#E8C547', color: '#0A1628', padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>
+              <a href="/beheer/wedstrijden/nieuw" style={{ background: secondaryColor, color: primaryColor, padding: '10px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>
                 Create first competition
               </a>
             )}
@@ -110,7 +112,7 @@ export default function WedstrijdenPage() {
               return (
                 <div key={w.id} style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <h3 style={{ color: '#0A1628', fontWeight: 800, fontSize: '16px', margin: '0 0 6px 0' }}>{w.naam}</h3>
+                    <h3 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', margin: '0 0 6px 0' }}>{w.naam}</h3>
                     <p style={{ color: '#9CA3AF', fontSize: '13px', margin: 0 }}>
                       {w.datum_van} · {w.schema_type === 'volledig' ? '15 rounds' : '5 rounds'} · {w.max_deelnemers} players
                     </p>

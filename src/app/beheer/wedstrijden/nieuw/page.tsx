@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 export default function NieuweWedstrijdPage() {
   const [naam, setNaam] = useState('')
@@ -17,6 +18,7 @@ export default function NieuweWedstrijdPage() {
   const [laden, setLaden] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const { primaryColor, secondaryColor } = useTenantContext()
 
   async function handleOpslaan(e: React.FormEvent) {
     e.preventDefault()
@@ -55,7 +57,7 @@ export default function NieuweWedstrijdPage() {
     width: '100%', padding: '12px 16px',
     border: '1px solid #E5E7EB', borderRadius: '8px',
     fontSize: '15px', outline: 'none', boxSizing: 'border-box' as const,
-    background: '#ffffff', color: '#0A1628',
+    background: '#ffffff', color: primaryColor,
   }
   const labelStyle = { display: 'block', color: '#374151', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }
 
@@ -64,9 +66,9 @@ export default function NieuweWedstrijdPage() {
 
       <TenantNav back={{ href: '/beheer/wedstrijden', label: 'Competitions' }} />
 
-      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
+          <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
           <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>New competition</h1>
         </div>
       </div>
@@ -119,7 +121,7 @@ export default function NieuweWedstrijdPage() {
                   <label key={opt.val} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', padding: '16px', border: `2px solid ${schemaType === opt.val ? '#1F5C99' : '#E5E7EB'}`, borderRadius: '8px', background: schemaType === opt.val ? '#EBF3FB' : '#ffffff' }}>
                     <input type="radio" value={opt.val} checked={schemaType === opt.val} onChange={() => setSchemaType(opt.val as 'volledig' | 'kort')} style={{ marginTop: '2px' }} />
                     <div>
-                      <div style={{ fontWeight: 700, color: '#0A1628', fontSize: '14px' }}>{opt.title}</div>
+                      <div style={{ fontWeight: 700, color: primaryColor, fontSize: '14px' }}>{opt.title}</div>
                       <div style={{ color: '#9CA3AF', fontSize: '13px', marginTop: '2px' }}>{opt.desc}</div>
                     </div>
                   </label>
@@ -134,7 +136,7 @@ export default function NieuweWedstrijdPage() {
             )}
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button type="submit" disabled={laden} style={{ background: '#E8C547', color: '#0A1628', padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>
+              <button type="submit" disabled={laden} style={{ background: secondaryColor, color: primaryColor, padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>
                 {laden ? 'Creating...' : 'Create competition'}
               </button>
               <a href="/beheer/wedstrijden" style={{ padding: '12px 20px', borderRadius: '8px', textDecoration: 'none', fontSize: '15px', color: '#6B7280', background: '#F3F4F6' }}>

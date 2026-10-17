@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useDemo } from '@/lib/useDemo'
 import type { Speler } from '@/types/database'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 export default function BewerkSpelerPage() {
   const [speler, setSpeler] = useState<Speler | null>(null)
@@ -21,6 +22,7 @@ export default function BewerkSpelerPage() {
   const router = useRouter()
   const params = useParams()
   const supabase = createClient()
+  const { primaryColor, secondaryColor } = useTenantContext()
   const { isDemo } = useDemo()
 
   useEffect(() => { laadSpeler() }, [])
@@ -62,13 +64,13 @@ export default function BewerkSpelerPage() {
     width: '100%', padding: '12px 16px',
     border: '1px solid #E5E7EB', borderRadius: '8px',
     fontSize: '15px', outline: 'none', boxSizing: 'border-box' as const,
-    background: isDemo ? '#F9FAFB' : '#ffffff', color: '#0A1628',
+    background: isDemo ? '#F9FAFB' : '#ffffff', color: primaryColor,
   }
   const labelStyle = { display: 'block', color: '#374151', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }
 
   if (laden) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
-      <div style={{ color: '#E8C547' }}>Loading...</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: primaryColor }}>
+      <div style={{ color: secondaryColor }}>Loading...</div>
     </div>
   )
 
@@ -89,9 +91,9 @@ export default function BewerkSpelerPage() {
         </div>
       )}
 
-      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
+          <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
           <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>
             {isDemo ? 'View player' : 'Edit player'}
           </h1>
@@ -153,7 +155,7 @@ export default function BewerkSpelerPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '12px' }}>
                 {!isDemo && (
-                  <button type="submit" disabled={opslaan} style={{ background: '#E8C547', color: '#0A1628', padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>
+                  <button type="submit" disabled={opslaan} style={{ background: secondaryColor, color: primaryColor, padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>
                     {opslaan ? 'Saving...' : 'Save changes'}
                   </button>
                 )}

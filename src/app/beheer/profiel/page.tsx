@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 const fieldStyle = {
   width: '100%',
@@ -19,6 +20,7 @@ const fieldStyle = {
 
 export default function ProfielPage() {
   const supabase = useMemo(() => createClient(), [])
+  const { primaryColor, secondaryColor } = useTenantContext()
   const router = useRouter()
   const [laden, setLaden] = useState(true)
   const [opslaan, setOpslaan] = useState(false)
@@ -78,8 +80,8 @@ export default function ProfielPage() {
 
   if (laden) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
-        <div style={{ color: '#E8C547' }}>Loading...</div>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: primaryColor }}>
+        <div style={{ color: secondaryColor }}>Loading...</div>
       </div>
     )
   }
@@ -89,8 +91,8 @@ export default function ProfielPage() {
       <TenantNav back={{ href: '/beheer', label: 'Dashboard' }} />
 
       <main style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 32px' }}>
-        <div style={{ background: '#0A1628', borderRadius: '14px', padding: '32px', marginBottom: '24px' }}>
-          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', margin: '0 0 8px' }}>PROFILE</p>
+        <div style={{ background: primaryColor, borderRadius: '14px', padding: '32px', marginBottom: '24px' }}>
+          <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', margin: '0 0 8px' }}>PROFILE</p>
           <h1 style={{ color: '#fff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Change password</h1>
         </div>
 
@@ -136,7 +138,7 @@ export default function ProfielPage() {
               </div>
             )}
 
-            <button type="submit" disabled={opslaan} style={{ width: '100%', padding: '14px', background: '#E8C547', color: '#0A1628', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '15px', cursor: opslaan ? 'not-allowed' : 'pointer', opacity: opslaan ? 0.7 : 1 }}>
+            <button type="submit" disabled={opslaan} style={{ width: '100%', padding: '14px', background: secondaryColor, color: primaryColor, border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '15px', cursor: opslaan ? 'not-allowed' : 'pointer', opacity: opslaan ? 0.7 : 1 }}>
               {opslaan ? 'Updating...' : 'Update password'}
             </button>
           </form>

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
 import { useDemo } from '@/lib/useDemo'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 interface SpelerInfo { id: string; voornaam: string; achternaam: string }
 interface SetInfo {
@@ -22,6 +23,7 @@ export default function RondeUitslagPage() {
   const [opslaan, setOpslaan] = useState<string | null>(null)
   const params = useParams()
   const supabase = createClient()
+  const { primaryColor, secondaryColor } = useTenantContext()
   const { isDemo } = useDemo()
 
   useEffect(() => { laadData() }, [])
@@ -55,8 +57,8 @@ export default function RondeUitslagPage() {
   }
 
   if (laden) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
-      <div style={{ color: '#E8C547' }}>Loading...</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: primaryColor }}>
+      <div style={{ color: secondaryColor }}>Loading...</div>
     </div>
   )
 
@@ -71,9 +73,9 @@ export default function RondeUitslagPage() {
         </div>
       )}
 
-      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
+          <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
           <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Round {rondeNummer} — {isDemo ? 'View results' : 'Enter results'}</h1>
         </div>
       </div>
@@ -81,8 +83,8 @@ export default function RondeUitslagPage() {
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {groepen.map(groep => (
           <div key={groep.id} style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ background: '#0A1628', padding: '12px 20px' }}>
-              <span style={{ color: '#E8C547', fontWeight: 700, fontSize: '13px' }}>Court {groep.baan_nummer}</span>
+            <div style={{ background: primaryColor, padding: '12px 20px' }}>
+              <span style={{ color: secondaryColor, fontWeight: 700, fontSize: '13px' }}>Court {groep.baan_nummer}</span>
               <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginLeft: '12px' }}>
                 {groep.spelers.map(s => `${s.voornaam} ${s.achternaam}`).join(' · ')}
               </span>
@@ -117,6 +119,7 @@ function SetRij({ set, spelers, naamVan, opslaan, isEven, isDemo, onOpslaan }: {
 }) {
   const [g1, setG1] = useState(set.games_team1?.toString() ?? '')
   const [g2, setG2] = useState(set.games_team2?.toString() ?? '')
+  const { primaryColor, secondaryColor } = useTenantContext()
   const team1 = `${naamVan(spelers, set.team1_speler1_id)} & ${naamVan(spelers, set.team1_speler2_id)}`
   const team2 = `${naamVan(spelers, set.team2_speler1_id)} & ${naamVan(spelers, set.team2_speler2_id)}`
   const opgeslagen = set.games_team1 !== null
@@ -140,8 +143,8 @@ function SetRij({ set, spelers, naamVan, opslaan, isEven, isDemo, onOpslaan }: {
           onClick={() => onOpslaan(+g1, +g2)}
           disabled={opslaan || g1 === '' || g2 === ''}
           style={{
-            background: opgeslagen ? '#DCFCE7' : '#E8C547',
-            color: opgeslagen ? '#166534' : '#0A1628',
+            background: opgeslagen ? '#DCFCE7' : secondaryColor,
+            color: opgeslagen ? '#166534' : primaryColor,
             padding: '6px 16px', borderRadius: '6px', border: 'none',
             fontWeight: 700, fontSize: '12px', cursor: 'pointer',
             opacity: opslaan ? 0.7 : 1,

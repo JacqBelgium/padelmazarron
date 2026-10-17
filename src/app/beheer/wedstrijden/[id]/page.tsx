@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { useDemo } from '@/lib/useDemo'
 import type { Wedstrijd, Speler, Deelname } from '@/types/database'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 export default function WedstrijdBeheerPage() {
   const [wedstrijd, setWedstrijd] = useState<Wedstrijd | null>(null)
@@ -18,6 +19,7 @@ export default function WedstrijdBeheerPage() {
   const [fout, setFout] = useState('')
   const params = useParams()
   const supabase = createClient()
+  const { primaryColor, secondaryColor } = useTenantContext()
   const { isDemo } = useDemo()
   const id = params.id as string
 
@@ -85,8 +87,8 @@ export default function WedstrijdBeheerPage() {
   }
 
   if (laden) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: '#0A1628' }}>
-      <div style={{ color: '#E8C547' }}>Loading...</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: primaryColor }}>
+      <div style={{ color: secondaryColor }}>Loading...</div>
     </div>
   )
   if (!wedstrijd) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}>Not found.</div>
@@ -105,10 +107,10 @@ export default function WedstrijdBeheerPage() {
         </div>
       )}
 
-      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
+            <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
             <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: '0 0 8px 0' }}>{wedstrijd.naam}</h1>
             <span style={{ background: wedstrijd.status === 'Actief' ? '#DCFCE7' : '#FEF9C3', color: wedstrijd.status === 'Actief' ? '#166534' : '#854D0E', padding: '3px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600 }}>
               {wedstrijd.status === 'Actief' ? 'Active' : wedstrijd.status === 'Afgesloten' ? 'Closed' : 'Draft'}
@@ -122,7 +124,7 @@ export default function WedstrijdBeheerPage() {
                 </button>
               )}
               {wedstrijd.status === 'Actief' && (
-                <button onClick={genereerSchemaActie} disabled={opslaan} style={{ background: '#E8C547', color: '#0A1628', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                <button onClick={genereerSchemaActie} disabled={opslaan} style={{ background: secondaryColor, color: primaryColor, padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
                   ⚡ Generate schedule
                 </button>
               )}
@@ -142,7 +144,7 @@ export default function WedstrijdBeheerPage() {
           ].map(item => (
             <div key={item.label} style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px' }}>
               <p style={{ color: '#9CA3AF', fontSize: '12px', margin: '0 0 4px 0' }}>{item.label}</p>
-              <p style={{ color: '#0A1628', fontWeight: 700, fontSize: '15px', margin: 0 }}>{item.value}</p>
+              <p style={{ color: primaryColor, fontWeight: 700, fontSize: '15px', margin: 0 }}>{item.value}</p>
             </div>
           ))}
         </div>
@@ -156,7 +158,7 @@ export default function WedstrijdBeheerPage() {
             ].map(item => (
               <a key={item.href} href={item.href} style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '20px', textDecoration: 'none', display: 'block' }}>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>{item.icon}</div>
-                <div style={{ color: '#0A1628', fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>{item.title}</div>
+                <div style={{ color: primaryColor, fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>{item.title}</div>
                 <div style={{ color: '#9CA3AF', fontSize: '12px' }}>{item.desc}</div>
               </a>
             ))}
@@ -168,7 +170,7 @@ export default function WedstrijdBeheerPage() {
 
         <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ padding: '16px 24px', borderBottom: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ color: '#0A1628', fontWeight: 800, fontSize: '15px', margin: 0 }}>Participants</h2>
+            <h2 style={{ color: primaryColor, fontWeight: 800, fontSize: '15px', margin: 0 }}>Participants</h2>
             <span style={{ color: deelbaarDoor4 ? '#16A34A' : '#9CA3AF', fontSize: '13px', fontWeight: 600 }}>
               {aantal} selected {deelbaarDoor4 ? '✓' : aantal > 0 ? `(${4 - (aantal % 4)} more needed)` : ''}
             </span>
@@ -177,7 +179,7 @@ export default function WedstrijdBeheerPage() {
             {alleSpelers.map((speler, i) => (
               <label key={speler.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', borderBottom: '1px solid #F9FAFB', background: i % 2 === 0 ? '#ffffff' : '#FAFAFA', cursor: wedstrijd.status === 'Concept' && !isDemo ? 'pointer' : 'default' }}>
                 <input type="checkbox" checked={geselecteerd.has(speler.id)} onChange={() => toggleSpeler(speler.id)} disabled={wedstrijd.status !== 'Concept' || isDemo} style={{ width: '16px', height: '16px', accentColor: '#1F5C99' }} />
-                <span style={{ fontWeight: 600, color: '#0A1628', fontSize: '14px', flex: 1 }}>{speler.voornaam} {speler.achternaam}</span>
+                <span style={{ fontWeight: 600, color: primaryColor, fontSize: '14px', flex: 1 }}>{speler.voornaam} {speler.achternaam}</span>
                 <span style={{ color: '#9CA3AF', fontSize: '12px' }}>{speler.geslacht === 'M' ? 'Man' : 'Woman'}</span>
               </label>
             ))}

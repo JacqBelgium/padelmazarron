@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import TenantNav from '@/components/TenantNav'
+import { useTenantContext } from '@/lib/TenantContext'
 
 export default function NieuweSpelerPage() {
   const [voornaam, setVoornaam] = useState('')
@@ -15,6 +16,7 @@ export default function NieuweSpelerPage() {
   const [laden, setLaden] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const { primaryColor, secondaryColor } = useTenantContext()
 
   async function handleOpslaan(e: React.FormEvent) {
     e.preventDefault()
@@ -56,7 +58,7 @@ export default function NieuweSpelerPage() {
     width: '100%', padding: '12px 16px',
     border: '1px solid #E5E7EB', borderRadius: '8px',
     fontSize: '15px', outline: 'none', boxSizing: 'border-box' as const,
-    background: '#ffffff', color: '#0A1628',
+    background: '#ffffff', color: primaryColor,
   }
 
   const labelStyle = {
@@ -71,9 +73,9 @@ export default function NieuweSpelerPage() {
       <TenantNav back={{ href: '/beheer/spelers', label: 'Players' }} />
 
       {/* Header */}
-      <div style={{ background: '#0A1628', padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <p style={{ color: '#E8C547', fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
+          <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Admin</p>
           <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Add player</h1>
         </div>
       </div>
@@ -126,7 +128,7 @@ export default function NieuweSpelerPage() {
               <button
                 type="submit"
                 disabled={laden}
-                style={{ background: '#E8C547', color: '#0A1628', padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}
+                style={{ background: secondaryColor, color: primaryColor, padding: '12px 28px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}
               >
                 {laden ? 'Saving...' : 'Save player'}
               </button>
