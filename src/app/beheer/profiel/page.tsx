@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import TenantNav from '@/components/TenantNav'
 
 const fieldStyle = {
   width: '100%',
@@ -85,16 +86,7 @@ export default function ProfielPage() {
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', minHeight: '100vh', background: '#F5F7FA' }}>
-      <nav style={{ background: '#0A1628', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <a href="https://racketcomp.eu" aria-label="RacketComp home" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: '#fff', fontWeight: 900, fontSize: '18px', letterSpacing: '-0.5px' }}>
-          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
-            <circle cx="20" cy="20" r="18" fill="none" stroke="#E8C547" strokeWidth="2" />
-            <path d="M13 27l13-14M12 18l10 10M16 14l10 10M23 11l6 6" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <span>RacketComp</span>
-        </a>
-        <a href="/beheer" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '14px' }}>← Back to dashboard</a>
-      </nav>
+      <TenantNav back={{ href: '/beheer', label: 'Dashboard' }} />
 
       <main style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 32px' }}>
         <div style={{ background: '#0A1628', borderRadius: '14px', padding: '32px', marginBottom: '24px' }}>
