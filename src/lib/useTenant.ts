@@ -35,16 +35,24 @@ export function useTenant() {
 
         if (!gebruiker?.club_id) return
 
-        const { data: config } = await supabase
+        const { data: config, error: configError } = await supabase
           .from('tenant_config')
           .select('primary_color, secondary_color, logo_url, naam')
           .eq('club_id', gebruiker.club_id)
           .maybeSingle()
 
-        if (!config) return
+        console.log('[useTenant] tenant_config raw data:', config, 'error:', configError, 'club_id:', gebruiker.club_id)
+
+        if (!config) {
+          console.log('[useTenant] no tenant_config found, final primaryColor:', DEFAULT_TENANT.primaryColor)
+          return
+        }
+
+        const primaryColor = config.primary_color || DEFAULT_TENANT.primaryColor
+        console.log('[useTenant] final primaryColor:', primaryColor)
 
         setTenant({
-          primaryColor: config.primary_color || DEFAULT_TENANT.primaryColor,
+          primaryColor,
           secondaryColor: config.secondary_color || DEFAULT_TENANT.secondaryColor,
           logoUrl: config.logo_url || null,
           naam: config.naam || DEFAULT_TENANT.naam,
