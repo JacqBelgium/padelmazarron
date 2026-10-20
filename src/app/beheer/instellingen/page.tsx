@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useDemo } from '@/lib/useDemo'
@@ -9,6 +9,8 @@ import TenantNav from '@/components/TenantNav'
 import { useTenantContext } from '@/lib/TenantContext'
 
 const HEX_KLEUR = /^#[0-9A-Fa-f]{6}$/
+const LOGO_MAX_BYTES = 500 * 1024
+const LOGO_TYPE = 'image/png'
 
 const labelStyle = { display: 'block', color: '#4B5563', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }
 
@@ -64,6 +66,10 @@ export default function InstellingenPage() {
   const [primair, setPrimair] = useState(DEFAULT_TENANT.primaryColor)
   const [secundair, setSecundair] = useState(DEFAULT_TENANT.secondaryColor)
   const [logoUrl, setLogoUrl] = useState('')
+  const [logoBestand, setLogoBestand] = useState<File | null>(null)
+  const [logoVoorbeeld, setLogoVoorbeeld] = useState<string | null>(null)
+  const [logoFout, setLogoFout] = useState('')
+  const bestandInput = useRef<HTMLInputElement>(null)
   const [succes, setSucces] = useState('')
   const [fout, setFout] = useState('')
 
@@ -114,6 +120,38 @@ export default function InstellingenPage() {
     void laadInstellingen()
   }, [router, supabase])
 
+  useEffect(() => {
+    return () => {
+      if (logoVoorbeeld) URL.revokeObjectURL(logoVoorbeeld)
+    }
+  }, [logoVoorbeeld])
+
+  function kiesLogo(event: ChangeEvent<HTMLInputElement>) {
+    const bestand = event.target.files?.[0]
+    event.target.value = ''
+    setLogoFout('')
+    if (!bestand) return
+
+    if (bestand.type !== LOGO_TYPE || !bestand.name.toLowerCase().endsWith('.png')) {
+      setLogoFout('Logo must be a PNG file.')
+      return
+    }
+    if (bestand.size > LOGO_MAX_BYTES) {
+      setLogoFout(`Logo is too large (${Math.ceil(bestand.size / 1024)}KB). Maximum is 500KB.`)
+      return
+    }
+
+    setLogoBestand(bestand)
+    setLogoVoorbeeld(URL.createObjectURL(bestand))
+  }
+
+  function verwijderLogo() {
+    setLogoBestand(null)
+    setLogoVoorbeeld(null)
+    setLogoUrl('')
+    setLogoFout('')
+  }
+
   async function bewaar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setFout('')
@@ -132,20 +170,29 @@ export default function InstellingenPage() {
       setFout('Colours must be hex values like #0A1628.')
       return
     }
-    if (logoUrl.trim() && !/^https?:\/\//i.test(logoUrl.trim())) {
-      setFout('Logo URL must start with http:// or https://')
-      return
-    }
-
-    const waarden = {
-      naam: naam.trim(),
-      primary_color: primair,
-      secondary_color: secundair,
-      logo_url: logoUrl.trim() || null,
-    }
 
     setOpslaan(true)
     try {
+      let nieuweLogoUrl = logoUrl || null
+      if (logoBestand) {
+        const pad = `${clubId}.png`
+        const { error: uploadError } = await supabase.storage
+          .from('logos')
+          .upload(pad, logoBestand, { upsert: true, contentType: logoBestand.type, cacheControl: '3600' })
+        if (uploadError) throw uploadError
+
+        const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(pad)
+        // Same filename on every upload, so add a version to bypass cached copies of the old logo
+        nieuweLogoUrl = `${publicUrl}?v=${Date.now()}`
+      }
+
+      const waarden = {
+        naam: naam.trim(),
+        primary_color: primair,
+        secondary_color: secundair,
+        logo_url: nieuweLogoUrl,
+      }
+
       const { data: bestaand, error: zoekError } = await supabase
         .from('tenant_config')
         .select('club_id')
@@ -159,6 +206,9 @@ export default function InstellingenPage() {
       if (error) throw error
 
       updateTenant({ naam: waarden.naam, primaryColor: primair, secondaryColor: secundair, logoUrl: waarden.logo_url })
+      setLogoUrl(nieuweLogoUrl ?? '')
+      setLogoBestand(null)
+      setLogoVoorbeeld(null)
       setSucces('Settings saved.')
     } catch (error) {
       console.error('Could not save tenant settings:', error)
@@ -182,7 +232,7 @@ export default function InstellingenPage() {
     naam: naam.trim() || DEFAULT_TENANT.naam,
     primaryColor: HEX_KLEUR.test(primair) ? primair : DEFAULT_TENANT.primaryColor,
     secondaryColor: HEX_KLEUR.test(secundair) ? secundair : DEFAULT_TENANT.secondaryColor,
-    logoUrl: logoUrl.trim() || null,
+    logoUrl: logoVoorbeeld || logoUrl || null,
   }
 
   return (
@@ -226,15 +276,46 @@ export default function InstellingenPage() {
             <KleurVeld id="secondary-color" label="Secondary colour" waarde={secundair} onChange={setSecundair} />
 
             <div style={{ marginBottom: '24px' }}>
-              <label htmlFor="logo-url" style={labelStyle}>Logo URL <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span></label>
-              <input
-                id="logo-url"
-                type="url"
-                value={logoUrl}
-                onChange={(event) => setLogoUrl(event.target.value)}
-                placeholder="https://example.com/logo.png"
-                style={fieldStyle}
-              />
+              <label htmlFor="logo-upload" style={labelStyle}>Logo <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional, PNG, max 500KB)</span></label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: preview.primaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                  {preview.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={preview.logoUrl} alt="Logo preview" width={40} height={40} style={{ display: 'block', objectFit: 'contain' }} />
+                  ) : (
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>None</span>
+                  )}
+                </div>
+                <input
+                  ref={bestandInput}
+                  id="logo-upload"
+                  type="file"
+                  accept=".png,image/png"
+                  onChange={kiesLogo}
+                  disabled={isDemo}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => bestandInput.current?.click()}
+                  disabled={isDemo}
+                  style={{ padding: '10px 16px', background: '#fff', color: '#111827', border: '1px solid #D1D5DB', borderRadius: '8px', fontWeight: 700, fontSize: '14px', cursor: isDemo ? 'not-allowed' : 'pointer' }}
+                >
+                  {preview.logoUrl ? 'Change logo' : 'Upload logo'}
+                </button>
+                {preview.logoUrl && (
+                  <button
+                    type="button"
+                    onClick={verwijderLogo}
+                    disabled={isDemo}
+                    style={{ padding: '10px 12px', background: 'transparent', color: '#6B7280', border: 'none', fontSize: '14px', cursor: isDemo ? 'not-allowed' : 'pointer' }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {logoBestand && <p style={{ color: '#6B7280', fontSize: '12px', margin: '6px 0 0' }}>{logoBestand.name} will be uploaded when you save.</p>}
+              {logoFout && <p role="alert" style={{ color: '#B91C1C', fontSize: '12px', margin: '6px 0 0' }}>{logoFout}</p>}
             </div>
 
             {fout && (
