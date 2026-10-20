@@ -1,11 +1,13 @@
 'use client'
 
 import React from 'react'
+import type { Tenant } from '@/lib/useTenant'
 import { useTenantContext } from '@/lib/TenantContext'
 
 interface TenantNavProps {
   back?: { href: string; label: string }
   children?: React.ReactNode
+  theme?: Partial<Tenant>
 }
 
 function RacketCompLogo() {
@@ -17,8 +19,8 @@ function RacketCompLogo() {
   )
 }
 
-export default function TenantNav({ back, children }: TenantNavProps) {
-  const { primaryColor, secondaryColor, logoUrl, naam } = useTenantContext()
+export default function TenantNav({ back, children, theme }: TenantNavProps) {
+  const { primaryColor, secondaryColor, logoUrl, naam } = { ...useTenantContext(), ...theme }
 
   return (
     <nav style={{ background: primaryColor, padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

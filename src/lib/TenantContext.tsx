@@ -3,7 +3,12 @@
 import React, { createContext, useContext } from 'react'
 import { useTenant, DEFAULT_TENANT, type Tenant } from '@/lib/useTenant'
 
-const TenantContext = createContext<Tenant & { laden: boolean }>({ ...DEFAULT_TENANT, laden: false })
+interface TenantContextValue extends Tenant {
+  laden: boolean
+  updateTenant: (tenant: Tenant) => void
+}
+
+const TenantContext = createContext<TenantContextValue>({ ...DEFAULT_TENANT, laden: false, updateTenant: () => {} })
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const tenant = useTenant()

@@ -67,5 +67,5 @@ export function useTenant() {
     void laadTenant()
   }, [])
 
-  return { ...tenant, laden }
+  return { ...tenant, laden, updateTenant: setTenant }
 }
