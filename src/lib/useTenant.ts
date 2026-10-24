@@ -41,24 +41,17 @@ export function useTenant() {
           .eq('club_id', gebruiker.club_id)
           .maybeSingle()
 
-        console.log('[useTenant] tenant_config raw data:', config, 'error:', configError, 'club_id:', gebruiker.club_id)
-
-        if (!config) {
-          console.log('[useTenant] no tenant_config found, final primaryColor:', DEFAULT_TENANT.primaryColor)
-          return
-        }
-
-        const primaryColor = config.primary_color || DEFAULT_TENANT.primaryColor
-        console.log('[useTenant] final primaryColor:', primaryColor)
+        if (configError) throw configError
+        if (!config) return
 
         setTenant({
-          primaryColor,
+          primaryColor: config.primary_color || DEFAULT_TENANT.primaryColor,
           secondaryColor: config.secondary_color || DEFAULT_TENANT.secondaryColor,
           logoUrl: config.logo_url || null,
           naam: config.naam || DEFAULT_TENANT.naam,
         })
       } catch (error) {
-        console.error('Could not load tenant config:', error)
+        console.error('Could not load tenant config:', error instanceof Error ? error.message : (error as { message?: string })?.message ?? 'unknown error')
       } finally {
         setLaden(false)
       }

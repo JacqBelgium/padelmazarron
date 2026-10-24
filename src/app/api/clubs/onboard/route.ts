@@ -32,31 +32,25 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
+function errorSummary(error: unknown) {
+  const { message, code } = (error ?? {}) as { message?: string; code?: string }
+  return { message, code }
+}
+
+function missingFields(fields: Record<string, unknown>) {
+  return Object.keys(fields).filter((key) => !fields[key]).join(', ')
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    console.log('clubs/onboard request received:', {
-      rawBody: body,
-      fields: {
-        naam: body?.naam,
-        clubnaam: body?.clubnaam,
-        email: body?.email,
-        sport: body?.sport,
-        contactpersoon: body?.contactpersoon,
-      },
-    })
-
     const { naam, clubnaam, email, sport, contactpersoon } = body ?? {}
     const resolvedContactpersoon = body?.contactpersoon || body?.naam
 
     if (!naam || !clubnaam || !email || !sport) {
-      console.error('clubs/onboard validation failed: missing required fields', {
-        naam,
-        clubnaam,
-        email,
-        sport,
-        contactpersoon,
-      })
+      console.error(
+        `clubs/onboard validation failed: missing field ${missingFields({ naam, clubnaam, email, sport })}`
+      )
       return NextResponse.json(
         { fout: 'naam, clubnaam, email en sport zijn verplicht' },
         { status: 400 }
@@ -70,13 +64,15 @@ export async function POST(request: NextRequest) {
     const trimmedContactpersoon = String(resolvedContactpersoon ?? trimmedNaam).trim()
 
     if (!trimmedNaam || !trimmedClubNaam || !trimmedEmail || !trimmedSport || !trimmedContactpersoon) {
-      console.error('clubs/onboard validation failed: empty required fields after trim', {
-        trimmedNaam,
-        trimmedClubNaam,
-        trimmedEmail,
-        trimmedSport,
-        trimmedContactpersoon,
-      })
+      console.error(
+        `clubs/onboard validation failed: empty field ${missingFields({
+          naam: trimmedNaam,
+          clubnaam: trimmedClubNaam,
+          email: trimmedEmail,
+          sport: trimmedSport,
+          contactpersoon: trimmedContactpersoon,
+        })}`
+      )
       return NextResponse.json(
         { fout: 'naam, email, sport en contactpersoon zijn verplicht' },
         { status: 400 }
@@ -84,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isValidEmail(trimmedEmail)) {
-      console.error('clubs/onboard validation failed: invalid email', { email: trimmedEmail })
+      console.error('clubs/onboard validation failed: invalid email')
       return NextResponse.json({ fout: 'Ongeldig e-mailadres' }, { status: 400 })
     }
 
@@ -104,7 +100,7 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (clubError || !clubData) {
-        console.error('clubs/onboard Supabase error creating club', { clubError, clubData })
+        console.error('clubs/onboard Supabase error creating club', errorSummary(clubError))
         throw clubError ?? new Error('Kon club niet aanmaken')
       }
 
@@ -132,20 +128,14 @@ export async function POST(request: NextRequest) {
       const authErrorMessage = authError?.message?.toLowerCase() ?? ''
 
       if (authError && authErrorMessage.includes('email_exists')) {
-        console.warn('clubs/onboard user already exists, fetching existing auth user by email', {
-          email: trimmedEmail,
-          authError,
-        })
+        console.warn('clubs/onboard user already exists, fetching existing auth user by email', errorSummary(authError))
 
         const existingUserLookup = await (admin.auth.admin as any).getUserByEmail(trimmedEmail)
         const existingUserData = existingUserLookup?.data
         const existingUserError = existingUserLookup?.error
 
         if (existingUserError || !existingUserData?.user) {
-          console.error('clubs/onboard Supabase error finding existing auth user', {
-            existingUserError,
-            email: trimmedEmail,
-          })
+          console.error('clubs/onboard Supabase error finding existing auth user', errorSummary(existingUserError))
           throw existingUserError ?? new Error('Kon bestaande auth-user niet ophalen')
         }
 
@@ -153,7 +143,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (!authData?.user) {
-        console.error('clubs/onboard Supabase error creating auth user', { authError, authData })
+        console.error('clubs/onboard Supabase error creating auth user', errorSummary(authError))
         throw authError ?? new Error('Kon Supabase-auth user niet aanmaken')
       }
 
@@ -168,7 +158,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (gebruikerError) {
-        console.error('clubs/onboard Supabase error creating gebruiker', { gebruikerError })
+        console.error('clubs/onboard Supabase error creating gebruiker', errorSummary(gebruikerError))
         throw gebruikerError
       }
 

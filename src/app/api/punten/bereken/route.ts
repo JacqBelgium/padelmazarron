@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
     if (!sets || sets.length === 0) return NextResponse.json({ fout: 'Geen sets gevonden' }, { status: 404 })
 
     console.log('Totaal sets:', sets.length)
-    console.log('Eerste set groepen:', JSON.stringify(sets[0]?.groepen))
 
     // Filter op wedstrijd
     const setsDezWedstrijd = sets.filter((s: any) => {
