@@ -32,6 +32,15 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function errorSummary(error: unknown) {
   const { message, code } = (error ?? {}) as { message?: string; code?: string }
   return { message, code }
@@ -168,8 +177,8 @@ export async function POST(request: NextRequest) {
         subject: 'Welkom bij RacketComp',
         html: `
           <h2>Welkom bij RacketComp</h2>
-          <p>Beste ${trimmedContactpersoon},</p>
-          <p>Je club <strong>${trimmedNaam}</strong> is succesvol aangemaakt.</p>
+          <p>Beste ${escapeHtml(trimmedContactpersoon)},</p>
+          <p>Je organisatie <strong>${escapeHtml(trimmedClubNaam)}</strong> is succesvol aangemaakt.</p>
           <p>Je kunt inloggen via: <a href="https://comp.racketcomp.eu/login">https://comp.racketcomp.eu/login</a></p>
           <p><strong>Voorlopig wachtwoord:</strong> ${temporaryPassword}</p>
           <p>Wij raden je aan dit wachtwoord direct te wijzigen nadat je bent ingelogd.</p>
