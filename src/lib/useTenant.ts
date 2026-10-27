@@ -42,13 +42,33 @@ export function useTenant() {
           .maybeSingle()
 
         if (configError) throw configError
-        if (!config) return
+
+        let naam: string | null = config?.naam?.trim() || null
+
+        if (!naam) {
+          const { data: club, error: clubError } = await supabase
+            .from('clubs')
+            .select('naam')
+            .eq('id', gebruiker.club_id)
+            .maybeSingle()
+
+          if (clubError) {
+            if (!config) throw clubError
+            console.error('Could not load club name:', clubError.message)
+          }
+          naam = club?.naam || null
+        }
+
+        if (!config) {
+          if (naam) setTenant({ ...DEFAULT_TENANT, naam })
+          return
+        }
 
         setTenant({
           primaryColor: config.primary_color || DEFAULT_TENANT.primaryColor,
           secondaryColor: config.secondary_color || DEFAULT_TENANT.secondaryColor,
           logoUrl: config.logo_url || null,
-          naam: config.naam || DEFAULT_TENANT.naam,
+          naam: naam || DEFAULT_TENANT.naam,
         })
       } catch (error) {
         console.error('Could not load tenant config:', error instanceof Error ? error.message : (error as { message?: string })?.message ?? 'unknown error')

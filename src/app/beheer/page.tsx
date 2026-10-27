@@ -8,13 +8,12 @@ import { useTenantContext } from '@/lib/TenantContext'
 
 export default function BeheerPage() {
   const [email, setEmail] = useState<string | null>(null)
-  const [clubNaam, setClubNaam] = useState('')
   const [actieveWedstrijdId, setActieveWedstrijdId] = useState<string | null>(null)
   const [laden, setLaden] = useState(true)
   const [isDemo, setIsDemo] = useState(false)
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
-  const { primaryColor, secondaryColor } = useTenantContext()
+  const { primaryColor, secondaryColor, naam, laden: tenantLaden } = useTenantContext()
 
   useEffect(() => {
     async function laadClubgegevens() {
@@ -36,26 +35,20 @@ export default function BeheerPage() {
         setIsDemo(gebruiker?.is_demo ?? false)
 
         if (gebruiker?.club_id) {
-          const [{ data: club }, { data: wedstrijd }] = await Promise.all([
-            supabase.from('clubs').select('naam').eq('id', gebruiker.club_id).single(),
-            supabase
-              .from('wedstrijden')
-              .select('id')
-              .eq('club_id', gebruiker.club_id)
-              .eq('status', 'Actief')
-              .limit(1)
-              .maybeSingle(),
-          ])
+          const { data: wedstrijd } = await supabase
+            .from('wedstrijden')
+            .select('id')
+            .eq('club_id', gebruiker.club_id)
+            .eq('status', 'Actief')
+            .limit(1)
+            .maybeSingle()
 
-          setClubNaam(club?.naam ?? 'Club')
           setActieveWedstrijdId(wedstrijd?.id ?? null)
         } else {
-          setClubNaam('Club')
           setActieveWedstrijdId(null)
         }
       } catch (error) {
         console.error('Could not load club details:', error)
-        setClubNaam('Club')
       } finally {
         setLaden(false)
       }
@@ -69,7 +62,7 @@ export default function BeheerPage() {
     router.push('/login')
   }
 
-  if (laden) return (
+  if (laden || tenantLaden) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', background: primaryColor }}>
       <div style={{ color: secondaryColor }}>Loading...</div>
     </div>
@@ -105,7 +98,7 @@ export default function BeheerPage() {
       <div style={{ background: primaryColor, padding: '32px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <p style={{ color: secondaryColor, fontWeight: 700, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>ADMIN</p>
-          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>{clubNaam}</h1>
+          <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>{naam}</h1>
         </div>
       </div>
 
