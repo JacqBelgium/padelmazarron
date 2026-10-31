@@ -1,11 +1,15 @@
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { genereerSchema } from '@/lib/schema-algoritme'
+import { requireWedstrijdAccess } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
   try {
     const { wedstrijd_id } = await request.json()
     if (!wedstrijd_id) return NextResponse.json({ fout: 'wedstrijd_id vereist' }, { status: 400 })
+
+    const toegang = await requireWedstrijdAccess(wedstrijd_id)
+    if (!toegang.ok) return toegang.response
 
     const admin = createAdmin(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
@@ -50,7 +51,23 @@ function missingFields(fields: Record<string, unknown>) {
   return Object.keys(fields).filter((key) => !fields[key]).join(', ')
 }
 
+function hasValidOnboardSecret(request: NextRequest) {
+  const secret = process.env.ONBOARD_SECRET
+  const header = request.headers.get('x-onboard-secret')
+  if (!secret || !header) return false
+
+  const expected = Buffer.from(secret)
+  const received = Buffer.from(header)
+  if (expected.length !== received.length) return false
+
+  return timingSafeEqual(expected, received)
+}
+
 export async function POST(request: NextRequest) {
+  if (!hasValidOnboardSecret(request)) {
+    return NextResponse.json({ fout: 'Not authorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { naam, clubnaam, email, sport, contactpersoon } = body ?? {}

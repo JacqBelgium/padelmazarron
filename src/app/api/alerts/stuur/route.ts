@@ -1,6 +1,7 @@
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { requireWedstrijdAccess } from '@/lib/api-auth'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -11,10 +12,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ fout: 'wedstrijd_id en ronde_id vereist' }, { status: 400 })
     }
 
+    const toegang = await requireWedstrijdAccess(wedstrijd_id)
+    if (!toegang.ok) return toegang.response
+
     const admin = createAdmin(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+
+    const { data: rondeVanWedstrijd } = await admin
+      .from('rondes')
+      .select('id')
+      .eq('id', ronde_id)
+      .eq('wedstrijd_id', wedstrijd_id)
+      .maybeSingle()
+
+    if (!rondeVanWedstrijd) return NextResponse.json({ fout: 'Ronde niet gevonden' }, { status: 404 })
 
     // Haal wedstrijd info op
     const { data: wedstrijd } = await admin
