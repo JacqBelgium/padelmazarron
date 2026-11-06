@@ -1,5 +1,6 @@
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { korteAchternamenVoorWedstrijd, weergaveNaam } from '@/lib/korte-naam'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
     .eq('wedstrijd_id', wedstrijd_id)
     .order('ronde_nummer')
 
+  const korteNamen = await korteAchternamenVoorWedstrijd(admin, wedstrijd_id)
   const rondes = []
 
   for (const ronde of rondesData ?? []) {
@@ -38,11 +40,11 @@ export async function GET(request: NextRequest) {
     for (const groep of groepenData ?? []) {
       const { data: groepSpelers } = await admin
         .from('groep_spelers')
-        .select('spelers(voornaam, achternaam)')
+        .select('spelers(id, voornaam)')
         .eq('groep_id', groep.id)
 
       const spelers = (groepSpelers ?? []).map((gs: any) =>
-        `${gs.spelers.voornaam} ${gs.spelers.achternaam}`
+        weergaveNaam(gs.spelers.voornaam, korteNamen.get(gs.spelers.id))
       )
 
       groepen.push({ baan: groep.baan_nummer, spelers })

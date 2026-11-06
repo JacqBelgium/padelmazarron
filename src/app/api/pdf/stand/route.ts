@@ -1,5 +1,6 @@
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { korteAchternamenVoorWedstrijd, weergaveNaam } from '@/lib/korte-naam'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -20,17 +21,18 @@ export async function GET(request: NextRequest) {
 
   const { data: punten } = await admin
     .from('punten')
-    .select('speler_id, games_gewonnen, set_gewonnen, ronde_id, is_invaller, spelers(voornaam, achternaam, geslacht)')
+    .select('speler_id, games_gewonnen, set_gewonnen, ronde_id, is_invaller, spelers(id, voornaam, geslacht)')
     .eq('wedstrijd_id', wedstrijd_id)
     .eq('is_invaller', false)
 
+  const korteNamen = await korteAchternamenVoorWedstrijd(admin, wedstrijd_id)
   const map = new Map<string, any>()
   const rondesPerSpeler = new Map<string, Set<string>>()
 
   for (const p of (punten ?? []) as any[]) {
     if (!map.has(p.speler_id)) {
       map.set(p.speler_id, {
-        naam: `${p.spelers.voornaam} ${p.spelers.achternaam}`,
+        naam: weergaveNaam(p.spelers.voornaam, korteNamen.get(p.speler_id)),
         geslacht: p.spelers.geslacht,
         totaal_games: 0,
         totaal_sets: 0,

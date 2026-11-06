@@ -92,7 +92,7 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
               </thead>
               <tbody>
                 {rijen.map((rij, i) => (
-                  <tr key={rij.speler_id} style={{ borderBottom: '1px solid #F3F4F6', background: i % 2 === 0 ? '#ffffff' : '#F9FAFB' }}>
+                  <tr key={`${i}-${rij.naam}`} style={{ borderBottom: '1px solid #F3F4F6', background: i % 2 === 0 ? '#ffffff' : '#F9FAFB' }}>
                     <td style={{ padding: '12px 16px', fontWeight: 800, color: '#9CA3AF', fontSize: '14px' }}>{rij.positie}</td>
                     <td style={{ padding: '12px 16px', fontWeight: 600, color: '#0A1628', fontSize: '14px' }}>{rij.naam}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }}>{rij.rondes_gespeeld}</td>
