@@ -5,7 +5,7 @@ import { requireWedstrijdAccess } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { wedstrijd_id } = await request.json()
+    const { wedstrijd_id, bevestig_wissen } = await request.json()
     if (!wedstrijd_id) return NextResponse.json({ fout: 'wedstrijd_id vereist' }, { status: 400 })
 
     const toegang = await requireWedstrijdAccess(wedstrijd_id)
@@ -38,10 +38,44 @@ export async function POST(request: NextRequest) {
     if (n % 4 !== 0)
       return NextResponse.json({ fout: `${n} deelnemers — moet deelbaar zijn door 4` }, { status: 400 })
 
+    // Compute the schedule first; nothing is deleted unless a usable schedule exists.
     const schema = genereerSchema(n, wedstrijd.schema_type)
+    if (schema.rondes.length === 0 || !schema.geldig)
+      return NextResponse.json({ fout: `A schedule for ${n} players is not available` }, { status: 422 })
+
     const spelerIds = deelnames.map((d: { speler_id: string }) => d.speler_id)
 
-    await admin.from('rondes').delete().eq('wedstrijd_id', wedstrijd_id)
+    // Regenerating deletes the existing rounds and their sets; refuse when results exist unless confirmed.
+    const { data: bestaandeRondes, error: rondesFout } = await admin
+      .from('rondes')
+      .select('id')
+      .eq('wedstrijd_id', wedstrijd_id)
+    if (rondesFout) throw rondesFout
+
+    const rondeIds = (bestaandeRondes ?? []).map((r: { id: string }) => r.id)
+    if (rondeIds.length > 0) {
+      const { data: bestaandeGroepen, error: groepenFout } = await admin
+        .from('groepen')
+        .select('id')
+        .in('ronde_id', rondeIds)
+      if (groepenFout) throw groepenFout
+
+      const groepIds = (bestaandeGroepen ?? []).map((g: { id: string }) => g.id)
+      if (groepIds.length > 0) {
+        const { count, error: setsFout } = await admin
+          .from('sets')
+          .select('id', { count: 'exact', head: true })
+          .in('groep_id', groepIds)
+          .not('games_team1', 'is', null)
+        if (setsFout) throw setsFout
+
+        if ((count ?? 0) > 0 && bevestig_wissen !== true)
+          return NextResponse.json({ fout: 'Results already entered' }, { status: 409 })
+      }
+    }
+
+    const { error: wisFout } = await admin.from('rondes').delete().eq('wedstrijd_id', wedstrijd_id)
+    if (wisFout) throw wisFout
 
     for (const ronde of schema.rondes) {
       const { data: rondeData } = await admin

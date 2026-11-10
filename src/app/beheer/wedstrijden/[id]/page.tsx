@@ -76,12 +76,32 @@ export default function WedstrijdBeheerPage() {
   async function genereerSchemaActie() {
     if (isDemo) return
     setOpslaan(true); setFout(''); setBericht('')
-    const response = await fetch('/api/schema/genereer', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wedstrijd_id: id }),
-    })
-    const data = await response.json()
-    if (data.fout) setFout(`Error: ${data.fout}`)
+    const verstuur = async (bevestigWissen: boolean) => {
+      const response = await fetch('/api/schema/genereer', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bevestigWissen ? { wedstrijd_id: id, bevestig_wissen: true } : { wedstrijd_id: id }),
+      })
+      return { status: response.status, data: await response.json().catch(() => ({})) }
+    }
+
+    let { status, data } = await verstuur(false)
+    if (status === 409) {
+      const akkoord = window.confirm(
+        'Results have already been entered for this competition.\n\n' +
+        'Generating a new schedule will permanently DELETE ALL entered results and the current rounds. This cannot be undone.\n\n' +
+        'Do you want to continue?'
+      )
+      if (!akkoord) {
+        setFout('Schedule not regenerated. Existing results were kept.')
+        setOpslaan(false)
+        return
+      }
+      ;({ status, data } = await verstuur(true))
+    }
+
+    if (status === 422) setFout(data.fout || 'A schedule for this number of players is not available.')
+    else if (data.fout) setFout(`Error: ${data.fout}`)
+    else if (status >= 400) setFout('Error: Could not generate the schedule.')
     else setBericht(`✓ Schedule generated! ${data.rondes} rounds for ${data.spelers} players.`)
     setOpslaan(false)
   }
