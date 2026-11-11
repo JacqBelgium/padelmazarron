@@ -19,6 +19,22 @@ export async function GET(request: Request) {
     .update({ last_ping: new Date().toISOString() })
     .eq('id', '28ffb7fc-a0a3-45d7-b915-958d4157335b')
 
+  // Open uitnodigingen waarvan de geldigheid voorbij is op 'verlopen' zetten.
+  // Bij een fout alleen de foutcode loggen; keep-alive en e-mail gaan gewoon door.
+  let verlopenUitnodigingen: number | null = null
+  try {
+    const { data: verlopen, error: verlopenFout } = await admin
+      .from('uitnodigingen')
+      .update({ status: 'verlopen' })
+      .eq('status', 'uitgenodigd')
+      .lt('verloopt_op', new Date().toISOString())
+      .select('id')
+    if (verlopenFout) console.error('Invitation expiry update failed:', verlopenFout.code)
+    else verlopenUitnodigingen = verlopen?.length ?? 0
+  } catch (fout) {
+    console.error('Invitation expiry update failed:', (fout as { code?: string })?.code ?? 'unknown')
+  }
+
   // Stats ophalen
   const { count: clubs } = await admin.from('clubs').select('*', { count: 'exact', head: true })
   const { count: spelers } = await admin.from('spelers').select('*', { count: 'exact', head: true })
@@ -38,6 +54,7 @@ export async function GET(request: Request) {
         <tr><td><strong>Spelers:</strong></td><td>${spelers}</td></tr>
         <tr><td><strong>Wedstrijden:</strong></td><td>${wedstrijden}</td></tr>
         <tr><td><strong>Sets gespeeld:</strong></td><td>${sets}</td></tr>
+        <tr><td><strong>Expired invitations:</strong></td><td>${verlopenUitnodigingen ?? 'error'}</td></tr>
       </table>
       <p>Volgende update over 3-4 dagen.</p>
       <p><a href="https://racketcomp.eu">racketcomp.eu</a></p>
