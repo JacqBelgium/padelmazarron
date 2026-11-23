@@ -4,11 +4,15 @@ import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useDemo } from '@/lib/useDemo'
 import type { Wedstrijd } from '@/types/database'
+import { aantalRondesVan } from '@/lib/wedstrijd-instellingen'
+
+// The number of existing rounds comes along with the competition (embedded count).
+type WedstrijdMetRondes = Wedstrijd & { rondes?: { count: number }[] }
 import TenantNav from '@/components/TenantNav'
 import { useTenantContext } from '@/lib/TenantContext'
 
 export default function WedstrijdenPage() {
-  const [wedstrijden, setWedstrijden] = useState<Wedstrijd[]>([])
+  const [wedstrijden, setWedstrijden] = useState<WedstrijdMetRondes[]>([])
   const [laden, setLaden] = useState(true)
   const supabase = createClient()
   const { primaryColor, secondaryColor } = useTenantContext()
@@ -38,7 +42,7 @@ export default function WedstrijdenPage() {
 
       const { data, error } = await supabase
         .from('wedstrijden')
-        .select('*')
+        .select('*, rondes(count)')
         .eq('club_id', gebruiker.club_id)
         .order('created_at', { ascending: false })
 
@@ -114,7 +118,7 @@ export default function WedstrijdenPage() {
                   <div>
                     <h3 style={{ color: primaryColor, fontWeight: 800, fontSize: '16px', margin: '0 0 6px 0' }}>{w.naam}</h3>
                     <p style={{ color: '#9CA3AF', fontSize: '13px', margin: 0 }}>
-                      {w.datum_van} · {w.schema_type === 'volledig' ? '15 rounds' : '5 rounds'} · {w.max_deelnemers} players
+                      {w.datum_van} · {aantalRondesVan(w, w.rondes?.[0]?.count ?? 0)} rounds · {w.max_deelnemers} players
                     </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

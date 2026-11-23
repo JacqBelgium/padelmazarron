@@ -193,7 +193,7 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
             {[
               { step: '01', title: 'Add your players', desc: 'Register participants with name, gender, and contact details.' },
-              { step: '02', title: 'Create a competition', desc: 'Set the format: American Tournament, short (5 rounds) or full (15 rounds).' },
+              { step: '02', title: 'Create a competition', desc: 'Set the start date, the number of players and the number of rounds (by default the number of players minus 1).' },
               { step: '03', title: 'Generate the schedule', desc: 'The algorithm automatically assigns players to courts and rounds.' },
               { step: '04', title: 'Enter results & follow standings', desc: 'Enter scores after each match. The live leaderboard updates instantly.' },
             ].map(item => (

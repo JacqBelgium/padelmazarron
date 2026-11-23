@@ -5,10 +5,13 @@ import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
 import TenantNav from '@/components/TenantNav'
 import { useTenantContext } from '@/lib/TenantContext'
+import { laadMatches, periode, rondeStatusLabel, teamsTekst, uitkomstTekst, type MatchInfo } from '@/lib/ronde-weergave'
 
-interface SpelerInfo { id: string; voornaam: string; achternaam: string }
-interface GroepInfo { id: string; baan_nummer: number; spelers: SpelerInfo[] }
-interface RondeInfo { id: string; ronde_nummer: number; status: string; groepen: GroepInfo[] }
+interface RondeInfo {
+  id: string; ronde_nummer: number; status: string
+  start_datum: string | null; eind_datum: string | null
+  matches: MatchInfo[]
+}
 
 export default function SchemaOverzichtPage() {
   const [rondes, setRondes] = useState<RondeInfo[]>([])
@@ -16,6 +19,7 @@ export default function SchemaOverzichtPage() {
   const [laden, setLaden] = useState(true)
   const [alertBezig, setAlertBezig] = useState<string | null>(null)
   const [bericht, setBericht] = useState('')
+  const [laadFout, setLaadFout] = useState('')
   const params = useParams()
   const supabase = createClient()
   const { primaryColor, secondaryColor } = useTenantContext()
@@ -26,20 +30,16 @@ export default function SchemaOverzichtPage() {
   async function laadSchema() {
     const { data: wedstrijd } = await supabase.from('wedstrijden').select('naam').eq('id', wedstrijdId).maybeSingle()
     setWedstrijdNaam(wedstrijd?.naam ?? '')
-    const { data: rondesData } = await supabase.from('rondes').select('id, ronde_nummer, status').eq('wedstrijd_id', wedstrijdId).order('ronde_nummer')
-    if (!rondesData) { setLaden(false); return }
-    const volledigeRondes: RondeInfo[] = []
-    for (const ronde of rondesData) {
-      const { data: groepenData } = await supabase.from('groepen').select('id, baan_nummer').eq('ronde_id', ronde.id).order('baan_nummer')
-      const groepen: GroepInfo[] = []
-      for (const groep of groepenData ?? []) {
-        const { data: groepSpelers } = await supabase.from('groep_spelers').select('speler_id, spelers(id, voornaam, achternaam)').eq('groep_id', groep.id)
-        const spelers = (groepSpelers ?? []).map((gs: any) => gs.spelers).filter(Boolean)
-        groepen.push({ id: groep.id, baan_nummer: groep.baan_nummer, spelers })
-      }
-      volledigeRondes.push({ id: ronde.id, ronde_nummer: ronde.ronde_nummer, status: ronde.status, groepen })
-    }
-    setRondes(volledigeRondes)
+    const { data: rondesData, error: rondesFout } = await supabase
+      .from('rondes')
+      .select('id, ronde_nummer, status, start_datum, eind_datum')
+      .eq('wedstrijd_id', wedstrijdId)
+      .order('ronde_nummer')
+    if (rondesFout || !rondesData) { setLaadFout('Could not load the schedule.'); setLaden(false); return }
+
+    const { matches, fout } = await laadMatches(supabase, rondesData.map(r => r.id))
+    if (fout) setLaadFout('Could not load the matches.')
+    setRondes(rondesData.map(r => ({ ...r, matches: matches.filter(m => m.ronde_id === r.id) })))
     setLaden(false)
   }
 
@@ -50,7 +50,7 @@ export default function SchemaOverzichtPage() {
       body: JSON.stringify({ wedstrijd_id: wedstrijdId, ronde_id: rondeId }),
     })
     const data = await response.json()
-    if (data.succes) setBericht(`✓ Round ${rondeNummer}: ${data.emails_verzonden} reminders sent for ${data.groepen_zonder_uitslag} groups.`)
+    if (data.succes) setBericht(`✓ Round ${rondeNummer}: ${data.emails_verzonden} reminders sent for ${data.groepen_zonder_uitslag} matches without a result.`)
     else if (data.bericht) setBericht(`✓ Round ${rondeNummer}: ${data.bericht}`)
     else setBericht(`⚠ Error: ${data.fout}`)
     setAlertBezig(null)
@@ -81,12 +81,22 @@ export default function SchemaOverzichtPage() {
           </div>
         )}
 
+        {laadFout && (
+          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', color: '#DC2626', fontSize: '14px' }}>
+            ⚠ {laadFout}
+          </div>
+        )}
+
         {rondes.map(ronde => (
           <div key={ronde.id} style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', marginBottom: '16px', overflow: 'hidden' }}>
             <div style={{ background: primaryColor, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <a href={`/beheer/wedstrijden/${wedstrijdId}/rondes/${ronde.id}`} style={{ color: secondaryColor, fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
-                Round {ronde.ronde_nummer} →
-              </a>
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
+                <a href={`/beheer/wedstrijden/${wedstrijdId}/rondes/${ronde.id}`} style={{ color: secondaryColor, fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
+                  Round {ronde.ronde_nummer} →
+                </a>
+                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>{periode(ronde.start_datum, ronde.eind_datum)}</span>
+                <span style={{ background: 'rgba(255,255,255,0.12)', color: '#ffffff', padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>{rondeStatusLabel(ronde.status)}</span>
+              </div>
               <button
                 onClick={() => stuurAlert(ronde.id, ronde.ronde_nummer)}
                 disabled={alertBezig === ronde.id}
@@ -96,11 +106,12 @@ export default function SchemaOverzichtPage() {
               </button>
             </div>
             <div>
-              {ronde.groepen.map((groep, i) => (
-                <div key={groep.id} style={{ display: 'grid', gridTemplateColumns: '90px 1fr', padding: '12px 20px', borderBottom: '1px solid #F9FAFB', background: i % 2 === 0 ? '#ffffff' : '#FAFAFA', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1F5C99' }}>Court {groep.baan_nummer}</span>
-                  <span style={{ fontSize: '14px', color: '#374151' }}>
-                    {groep.spelers.map(s => `${s.voornaam} ${s.achternaam}`).join('  ·  ')}
+              {ronde.matches.map((match, i) => (
+                <div key={match.id} style={{ display: 'grid', gridTemplateColumns: '90px 1fr auto', gap: '12px', padding: '12px 20px', borderBottom: '1px solid #F9FAFB', background: i % 2 === 0 ? '#ffffff' : '#FAFAFA', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1F5C99' }}>Match {match.baan_nummer}</span>
+                  <span style={{ fontSize: '14px', color: '#374151' }}>{teamsTekst(match)}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: !match.status || match.status === 'gepland' || match.status === 'gespeeld' ? '#166534' : '#9A3412', whiteSpace: 'nowrap' }}>
+                    {uitkomstTekst(match)}
                   </span>
                 </div>
               ))}

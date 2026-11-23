@@ -6,10 +6,11 @@ import { useParams } from 'next/navigation'
 import { useDemo } from '@/lib/useDemo'
 import TenantNav from '@/components/TenantNav'
 import { useTenantContext } from '@/lib/TenantContext'
+import { forfaitTekst, forfaitTitel, geenTotalen, rangschik, telPunten, type PuntRij } from '@/lib/stand'
 
 interface StandRij {
   speler_id: string; naam: string; geslacht: string
-  totaal_games: number; totaal_sets: number; rondes_gespeeld: number; positie: number
+  totaal_games: number; totaal_sets: number; rondes_gespeeld: number; forfaits: number; positie: number
 }
 
 export default function PuntenstandPage() {
@@ -30,28 +31,30 @@ export default function PuntenstandPage() {
   async function laadData() {
     const { data: wedstrijd } = await supabase.from('wedstrijden').select('naam').eq('id', id).maybeSingle()
     setWedstrijdNaam(wedstrijd?.naam ?? '')
-    const { data: punten } = await supabase
-      .from('punten')
-      .select('speler_id, games_gewonnen, set_gewonnen, ronde_id, is_invaller, spelers(voornaam, achternaam, geslacht)')
-      .eq('wedstrijd_id', id).eq('is_invaller', false)
-    if (!punten || punten.length === 0) { setLaden(false); return }
-    const map = new Map<string, StandRij>()
-    const rondesPerSpeler = new Map<string, Set<string>>()
-    for (const p of punten as any[]) {
-      if (!map.has(p.speler_id)) {
-        map.set(p.speler_id, { speler_id: p.speler_id, naam: `${p.spelers.voornaam} ${p.spelers.achternaam}`, geslacht: p.spelers.geslacht, totaal_games: 0, totaal_sets: 0, rondes_gespeeld: 0, positie: 0 })
-        rondesPerSpeler.set(p.speler_id, new Set())
-      }
-      const rij = map.get(p.speler_id)!
-      rij.totaal_games += p.games_gewonnen
-      if (p.set_gewonnen) rij.totaal_sets += 1
-      rondesPerSpeler.get(p.speler_id)!.add(p.ronde_id)
-    }
-    for (const [sid, rondes] of rondesPerSpeler) map.get(sid)!.rondes_gespeeld = rondes.size
-    const sorteer = (a: StandRij, b: StandRij) => b.totaal_games !== a.totaal_games ? b.totaal_games - a.totaal_games : b.totaal_sets - a.totaal_sets
-    const alle = [...map.values()].sort(sorteer).map((r, i) => ({ ...r, positie: i + 1 }))
-    setHeren(alle.filter(r => r.geslacht === 'M'))
-    setDames(alle.filter(r => r.geslacht === 'V'))
+    // Every confirmed participant is listed; totals come from the punten rows (zeros when there are none).
+    const [{ data: deelnemers }, { data: punten }] = await Promise.all([
+      supabase
+        .from('deelnames')
+        .select('speler_id, spelers(voornaam, achternaam, geslacht)')
+        .eq('wedstrijd_id', id)
+        .eq('uitnodiging_status', 'bevestigd'),
+      supabase
+        .from('punten')
+        .select('speler_id, games_gewonnen, set_gewonnen, ronde_id, afwezig')
+        .eq('wedstrijd_id', id).eq('is_invaller', false),
+    ])
+    const totalen = telPunten((punten ?? []) as PuntRij[])
+    const rijen = ((deelnemers ?? []) as any[])
+      .filter(d => d.spelers)
+      .map(d => ({
+        speler_id: d.speler_id as string,
+        naam: `${d.spelers.voornaam} ${d.spelers.achternaam}`,
+        geslacht: d.spelers.geslacht as string,
+        ...(totalen.get(d.speler_id) ?? geenTotalen()),
+      }))
+    // Positions are numbered per list: men and women each start at 1.
+    setHeren(rangschik(rijen.filter(r => r.geslacht === 'M')))
+    setDames(rangschik(rijen.filter(r => r.geslacht === 'V')))
     setLaden(false)
   }
 
@@ -63,7 +66,7 @@ export default function PuntenstandPage() {
       body: JSON.stringify({ wedstrijd_id: id }),
     })
     const data = await response.json()
-    if (data.succes) { setBericht(`✓ ${data.sets_verwerkt} sets processed.`); laadData() }
+    if (data.succes) { setBericht(`✓ ${data.sets_verwerkt} matches processed.`); laadData() }
     else setBericht(`⚠ ${data.fout}`)
     setBerekenen(false)
   }
@@ -79,7 +82,7 @@ export default function PuntenstandPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: primaryColor }}>
-                  {['#', 'Player', 'Rounds', 'Sets won', 'Games'].map(h => (
+                  {['#', 'Player', 'Rounds', 'Matches won', 'Games', 'F'].map(h => (
                     <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Player' ? 'left' : 'center', color: secondaryColor, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
@@ -92,6 +95,7 @@ export default function PuntenstandPage() {
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }}>{rij.rondes_gespeeld}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }}>{rij.totaal_sets}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: '#1F5C99', fontSize: '16px' }}>{rij.totaal_games}</td>
+                    <td title={forfaitTitel(rij.forfaits) || undefined} style={{ padding: '12px 16px', textAlign: 'center', color: '#DC2626', fontWeight: 700, fontSize: '13px', whiteSpace: 'nowrap' }}>{forfaitTekst(rij.forfaits)}</td>
                   </tr>
                 ))}
               </tbody>

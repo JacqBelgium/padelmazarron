@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
+import { vandaagBrussel } from '@/lib/schema-planning'
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
@@ -35,6 +36,35 @@ export async function GET(request: Request) {
     console.error('Invitation expiry update failed:', (fout as { code?: string })?.code ?? 'unknown')
   }
 
+  // Ronde 1 openen van actieve wedstrijden waarvan de startdatum (Brusselse datum) bereikt is.
+  // Bij een fout alleen de foutcode loggen en doorgaan, net als bij het verlopen van uitnodigingen.
+  let geopendeRondes: number | null = null
+  try {
+    const { data: teOpenen, error: zoekFout } = await admin
+      .from('rondes')
+      .select('id, wedstrijden!inner(status)')
+      .eq('ronde_nummer', 1)
+      .eq('status', 'Gepland')
+      .lte('start_datum', vandaagBrussel())
+      .eq('wedstrijden.status', 'Actief')
+    if (zoekFout) {
+      console.error('Round opening lookup failed:', zoekFout.code)
+    } else if (!teOpenen || teOpenen.length === 0) {
+      geopendeRondes = 0
+    } else {
+      const { data: geopend, error: openFout } = await admin
+        .from('rondes')
+        .update({ status: 'Open', gestart_op: new Date().toISOString() })
+        .in('id', teOpenen.map((r: { id: string }) => r.id))
+        .eq('status', 'Gepland')
+        .select('id')
+      if (openFout) console.error('Round opening update failed:', openFout.code)
+      else geopendeRondes = geopend?.length ?? 0
+    }
+  } catch (fout) {
+    console.error('Round opening failed:', (fout as { code?: string })?.code ?? 'unknown')
+  }
+
   // Stats ophalen
   const { count: clubs } = await admin.from('clubs').select('*', { count: 'exact', head: true })
   const { count: spelers } = await admin.from('spelers').select('*', { count: 'exact', head: true })
@@ -55,6 +85,7 @@ export async function GET(request: Request) {
         <tr><td><strong>Wedstrijden:</strong></td><td>${wedstrijden}</td></tr>
         <tr><td><strong>Sets gespeeld:</strong></td><td>${sets}</td></tr>
         <tr><td><strong>Expired invitations:</strong></td><td>${verlopenUitnodigingen ?? 'error'}</td></tr>
+        <tr><td><strong>Rounds opened:</strong></td><td>${geopendeRondes ?? 'error'}</td></tr>
       </table>
       <p>Volgende update over 3-4 dagen.</p>
       <p><a href="https://racketcomp.eu">racketcomp.eu</a></p>

@@ -45,6 +45,9 @@ export interface Wedstrijd {
   aanvangstijd: string | null; speelformaat: Speelformaat
   schema_type: SchemaType; max_deelnemers: number
   status: WedstrijdStatus; created_at: string
+  ronde_duur_dagen?: number | null; aantal_rondes?: number | null
+  speelduur_minuten?: number | null; spelregels?: string | null
+  forfait_games?: number | null; toon_forfaits_publiek?: boolean | null
 }
 
 export interface Deelname {
@@ -65,6 +68,7 @@ export interface Groep {
 
 export interface GroepSpeler {
   id: string; groep_id: string; speler_id: string; is_invaller: boolean
+  afwezig?: boolean; vervangt_speler_id?: string | null; niveau_onbekend_bevestigd?: boolean
 }
 
 export interface Set {
@@ -78,7 +82,7 @@ export interface Set {
 export interface Punt {
   id: string; wedstrijd_id: string; ronde_id: string
   speler_id: string; set_id: string; games_gewonnen: number
-  set_gewonnen: boolean; is_invaller: boolean
+  set_gewonnen: boolean; is_invaller: boolean; afwezig?: boolean
 }
 
 export interface Correctie {

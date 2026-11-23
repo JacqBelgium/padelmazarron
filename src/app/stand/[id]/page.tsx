@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { forfaitTekst, forfaitTitel } from '@/lib/stand'
 
 interface StandRij {
   speler_id: string
@@ -9,6 +10,7 @@ interface StandRij {
   totaal_games: number
   totaal_sets: number
   rondes_gespeeld: number
+  forfaits?: number
   positie: number
 }
 
@@ -17,17 +19,25 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
   const [heren, setHeren] = useState<StandRij[]>([])
   const [dames, setDames] = useState<StandRij[]>([])
   const [laden, setLaden] = useState(true)
+  // Only true when the route sent the forfaits field (the organiser chose to show missed rounds).
+  const [toonForfaits, setToonForfaits] = useState(false)
+  const [gestart, setGestart] = useState(false)
 
   useEffect(() => {
     fetch(`/api/pdf/stand?wedstrijd_id=${params.id}`)
       .then(r => r.json())
       .then(data => {
         setNaam(data.wedstrijd)
-        setHeren(data.heren)
-        setDames(data.dames)
+        setHeren(data.heren ?? [])
+        setDames(data.dames ?? [])
+        setGestart(data.gestart === true)
+        setToonForfaits([...(data.heren ?? []), ...(data.dames ?? [])].some((r: object) => 'forfaits' in r))
         setLaden(false)
       })
   }, [])
+
+  const pdfKop = ['#', 'Player', 'Rounds', 'Matches won', 'Games', ...(toonForfaits ? ['F'] : [])]
+  const pdfRij = (r: StandRij) => [r.positie, r.naam, r.rondes_gespeeld, r.totaal_sets, r.totaal_games, ...(toonForfaits ? [forfaitTekst(r.forfaits ?? 0)] : [])]
 
   async function downloadPdf() {
     const { jsPDF } = await import('jspdf')
@@ -46,8 +56,8 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
       y += 4
       autoTable(doc, {
         startY: y,
-        head: [['#', 'Player', 'Rounds', 'Sets won', 'Games']],
-        body: heren.map(r => [r.positie, r.naam, r.rondes_gespeeld, r.totaal_sets, r.totaal_games]),
+        head: [pdfKop],
+        body: heren.map(pdfRij),
         theme: 'striped',
         headStyles: { fillColor: [31, 92, 153] },
       })
@@ -61,8 +71,8 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
       y += 4
       autoTable(doc, {
         startY: y,
-        head: [['#', 'Player', 'Rounds', 'Sets won', 'Games']],
-        body: dames.map(r => [r.positie, r.naam, r.rondes_gespeeld, r.totaal_sets, r.totaal_games]),
+        head: [pdfKop],
+        body: dames.map(pdfRij),
         theme: 'striped',
         headStyles: { fillColor: [31, 92, 153] },
       })
@@ -86,8 +96,9 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
                   <th style={{ padding: '10px 16px', textAlign: 'left', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>#</th>
                   <th style={{ padding: '10px 16px', textAlign: 'left', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Player</th>
                   <th style={{ padding: '10px 16px', textAlign: 'center', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Rounds</th>
-                  <th style={{ padding: '10px 16px', textAlign: 'center', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Sets won</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'center', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Matches won</th>
                   <th style={{ padding: '10px 16px', textAlign: 'center', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Games</th>
+                  {toonForfaits && <th title="Missed rounds" style={{ padding: '10px 16px', textAlign: 'center', color: '#E8C547', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>F</th>}
                 </tr>
               </thead>
               <tbody>
@@ -98,6 +109,7 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }}>{rij.rondes_gespeeld}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }}>{rij.totaal_sets}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: '#1F5C99', fontSize: '16px' }}>{rij.totaal_games}</td>
+                    {toonForfaits && <td title={forfaitTitel(rij.forfaits ?? 0) || undefined} style={{ padding: '12px 16px', textAlign: 'center', color: '#DC2626', fontWeight: 700, fontSize: '13px', whiteSpace: 'nowrap' }}>{forfaitTekst(rij.forfaits ?? 0)}</td>}
                   </tr>
                 ))}
               </tbody>
@@ -131,7 +143,7 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
           {naam}
         </h1>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <button
+          {gestart && <button
             onClick={downloadPdf}
             style={{
               background: '#E8C547', color: '#0A1628',
@@ -140,7 +152,7 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
             }}
           >
             Download PDF
-          </button>
+          </button>}
           
             <a href={`/schema/${params.id}`}
             style={{
@@ -157,8 +169,14 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
 
       {/* Standings */}
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 24px' }}>
-        <StandTabel rijen={heren} titel="Men" />
-        <StandTabel rijen={dames} titel="Women" />
+        {gestart ? (
+          <>
+            <StandTabel rijen={heren} titel="Men" />
+            <StandTabel rijen={dames} titel="Women" />
+          </>
+        ) : (
+          <p style={{ color: '#6B7280', fontSize: '15px', textAlign: 'center' }}>This competition has not started yet.</p>
+        )}
       </div>
 
       {/* Footer */}
