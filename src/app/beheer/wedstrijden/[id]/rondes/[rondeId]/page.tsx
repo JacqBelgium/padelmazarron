@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import { useDemo } from '@/lib/useDemo'
 import TenantNav from '@/components/TenantNav'
 import { useTenantContext } from '@/lib/TenantContext'
-import { formatDatum, heeftUitkomst, isUitkomst, laadMatches, periode, rondeStatusLabel, teamsTekst, uitkomstLabel, type MatchInfo, type Uitkomst } from '@/lib/ronde-weergave'
+import { formatDatum, heeftUitkomst, isUitkomst, kanUitslagenInvoeren, laadMatches, periode, rondeStatusLabel, teamsTekst, uitkomstLabel, type MatchInfo, type Uitkomst } from '@/lib/ronde-weergave'
 import { STANDAARD_FORFAIT_GAMES } from '@/lib/wedstrijd-instellingen'
 
 interface RondeInfo { id: string; wedstrijd_id: string; ronde_nummer: number; status: string; start_datum: string | null; eind_datum: string | null }
@@ -219,7 +219,7 @@ export default function RondeUitslagPage() {
         if (!vier.includes(invoer.afwezige)) { meld(false, 'Choose the player who was absent.'); return }
         afwezige = invoer.afwezige
         setRij = metInvoerder(f, f)
-        okTekst = 'Saved: one player absent.'
+        okTekst = 'Saved: player absent, no substitute.'
       }
       groepStatus = invoer.uitkomst
     }
@@ -232,7 +232,7 @@ export default function RondeUitslagPage() {
       return
     }
 
-    // groep_spelers.afwezig: only the chosen player for 'One player absent'; cleared for every other outcome.
+    // groep_spelers.afwezig: only the chosen player for 'Player absent, no substitute'; cleared for every other outcome.
     let afwezigFout = (await supabase.from('groep_spelers').update({ afwezig: false }).eq('groep_id', match.id)).error
     if (!afwezigFout && afwezige) {
       afwezigFout = (await supabase.from('groep_spelers').update({ afwezig: true }).eq('groep_id', match.id).eq('speler_id', afwezige)).error
@@ -257,7 +257,7 @@ export default function RondeUitslagPage() {
   )
 
   const invoerOpen = ronde?.status === 'Open' || ronde?.status === 'Volledig'
-  const bewerkbaar = invoerOpen && !isDemo
+  const bewerkbaar = kanUitslagenInvoeren(ronde?.status, isDemo)
   const kanHeropenen = ronde?.status === 'Afgesloten' && !volgende?.heeftUitslagen
   const knopStijl = { background: 'transparent', color: '#ffffff', padding: '6px 14px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.4)', fontWeight: 600, fontSize: '12px' }
 
@@ -346,7 +346,7 @@ const UITKOMST_OPTIES: { waarde: Uitkomst; label: string }[] = [
   { waarde: 'gespeeld', label: 'Played' },
   { waarde: 'forfait_team1', label: 'Team 1 forfait' },
   { waarde: 'forfait_team2', label: 'Team 2 forfait' },
-  { waarde: 'speler_afwezig', label: 'One player absent' },
+  { waarde: 'speler_afwezig', label: 'Player absent, no substitute' },
   { waarde: 'niet_gespeeld', label: 'Both teams absent' },
 ]
 

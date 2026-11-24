@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useParams } from 'next/navigation'
 import TenantNav from '@/components/TenantNav'
 import { useTenantContext } from '@/lib/TenantContext'
-import { laadMatches, periode, rondeStatusLabel, teamsTekst, uitkomstTekst, type MatchInfo } from '@/lib/ronde-weergave'
+import { useDemo } from '@/lib/useDemo'
+import { kanUitslagenInvoeren, laadMatches, periode, rondeStatusLabel, teamsTekst, uitkomstTekst, type MatchInfo } from '@/lib/ronde-weergave'
 
 interface RondeInfo {
   id: string; ronde_nummer: number; status: string
@@ -23,7 +24,14 @@ export default function SchemaOverzichtPage() {
   const params = useParams()
   const supabase = createClient()
   const { primaryColor, secondaryColor } = useTenantContext()
+  const { isDemo } = useDemo()
   const wedstrijdId = params.id as string
+
+  // Link text says what the round page offers for this round and this user.
+  function rondeLinkTekst(status: string) {
+    if (status === 'Gepland') return 'View round →'
+    return kanUitslagenInvoeren(status, isDemo) ? 'Enter results →' : 'View results →'
+  }
 
   useEffect(() => { laadSchema() }, [])
 
@@ -91,8 +99,9 @@ export default function SchemaOverzichtPage() {
           <div key={ronde.id} style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', marginBottom: '16px', overflow: 'hidden' }}>
             <div style={{ background: primaryColor, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
-                <a href={`/beheer/wedstrijden/${wedstrijdId}/rondes/${ronde.id}`} style={{ color: secondaryColor, fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
-                  Round {ronde.ronde_nummer} →
+                <h2 style={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', margin: 0 }}>Round {ronde.ronde_nummer}</h2>
+                <a href={`/beheer/wedstrijden/${wedstrijdId}/rondes/${ronde.id}`} style={{ color: secondaryColor, fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+                  {rondeLinkTekst(ronde.status)}
                 </a>
                 <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>{periode(ronde.start_datum, ronde.eind_datum)}</span>
                 <span style={{ background: 'rgba(255,255,255,0.12)', color: '#ffffff', padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>{rondeStatusLabel(ronde.status)}</span>

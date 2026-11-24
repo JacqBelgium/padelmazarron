@@ -37,6 +37,11 @@ export default function WedstrijdInstellingenVelden({ waarden, onChange, alleenL
   const optioneel = <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span>
 
   const max = Number(waarden.maxDeelnemers) || 0
+  // Allowed values: 1 to max - 1 (same rule as the validation). A stored value outside that range
+  // (e.g. after lowering the maximum) stays visible so the validation message makes sense.
+  const rondeOpties = Array.from({ length: Math.max(0, max - 1) }, (_, i) => i + 1)
+  const huidig = Number(waarden.aantalRondes.trim())
+  if (waarden.aantalRondes.trim() && Number.isInteger(huidig) && !rondeOpties.includes(huidig)) rondeOpties.push(huidig)
   const rondes = bestaandeRondes > 0 ? bestaandeRondes : effectieveRondes(waarden)
   const einddatum = berekenEinddatum(waarden)
 
@@ -59,8 +64,12 @@ export default function WedstrijdInstellingenVelden({ waarden, onChange, alleenL
             <input id="ronde_duur_dagen" type="number" min={RONDE_DUUR_MIN} max={RONDE_DUUR_MAX} step={1} value={waarden.rondeDuurDagen} onChange={e => onChange('rondeDuurDagen', e.target.value)} style={inputStyle} required disabled={alleenLezen} />
           </div>
           <div>
-            <label style={labelStyle} htmlFor="aantal_rondes">Number of rounds {optioneel}</label>
-            <input id="aantal_rondes" type="number" min={1} max={Math.max(1, max - 1)} step={1} value={waarden.aantalRondes} placeholder={max > 1 ? String(max - 1) : ''} onChange={e => onChange('aantalRondes', e.target.value)} style={inputStyle} disabled={alleenLezen} />
+            <label style={labelStyle} htmlFor="aantal_rondes">Number of rounds</label>
+            <select id="aantal_rondes" value={waarden.aantalRondes.trim()} onChange={e => onChange('aantalRondes', e.target.value)} style={inputStyle} disabled={alleenLezen}>
+              {/* Empty value = automatic (participants minus 1), exactly like the empty field before. */}
+              <option value="">{max > 1 ? `Automatic (${max - 1} rounds)` : 'Automatic'}</option>
+              {rondeOpties.map(n => <option key={n} value={String(n)}>{n} rounds</option>)}
+            </select>
           </div>
           <div>
             <label style={labelStyle} htmlFor="speelduur_minuten">Match duration (minutes) {optioneel}</label>

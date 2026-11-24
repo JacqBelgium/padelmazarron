@@ -18,7 +18,7 @@ export interface MatchInfo {
   captain_speler_id: string | null
   spelers: SpelerNaam[]
   uitslag: MatchUitslag | null
-  // The player marked groep_spelers.afwezig for this match ('One player absent'), or null.
+  // The player marked groep_spelers.afwezig for this match ('Player absent, no substitute'), or null.
   afwezig_speler_id: string | null
 }
 
@@ -30,7 +30,7 @@ const uitkomstLabels: Record<Uitkomst, string> = {
   gespeeld: 'Played',
   forfait_team1: 'Team 1 forfait',
   forfait_team2: 'Team 2 forfait',
-  speler_afwezig: 'One player absent',
+  speler_afwezig: 'Player absent, no substitute',
   niet_gespeeld: 'Both teams absent',
 }
 
@@ -47,6 +47,11 @@ const rondeStatusLabels: Record<string, string> = {
   Open: 'Open',
   Volledig: 'Complete',
   Afgesloten: 'Closed',
+}
+
+// Results can be entered in an Open or Volledig round, never by the demo (read-only) user.
+export function kanUitslagenInvoeren(rondeStatus: string | null | undefined, isDemo: boolean) {
+  return (rondeStatus === 'Open' || rondeStatus === 'Volledig') && !isDemo
 }
 
 export function rondeStatusLabel(status: string | null | undefined) {
@@ -68,14 +73,14 @@ export function heeftUitslag(uitslag: MatchUitslag | null) {
 }
 
 // Outcome without score or names, for the public schedule: 'Played', 'Forfait team 1', 'Forfait team 2',
-// 'One player absent', 'Both teams absent'. Empty when the match has no outcome.
+// 'Player absent, not played', 'Both teams absent, not played'. Empty when the match has no outcome.
 export function uitkomstKort(status: string | null | undefined) {
   switch (status) {
     case 'gespeeld': return 'Played'
     case 'forfait_team1': return 'Forfait team 1'
     case 'forfait_team2': return 'Forfait team 2'
-    case 'speler_afwezig': return 'One player absent'
-    case 'niet_gespeeld': return 'Both teams absent'
+    case 'speler_afwezig': return 'Player absent, not played'
+    case 'niet_gespeeld': return 'Both teams absent, not played'
     default: return ''
   }
 }
@@ -85,7 +90,7 @@ export function heeftUitkomst(match: Pick<MatchInfo, 'status' | 'uitslag'>) {
   return isUitkomst(match.status) || heeftUitslag(match.uitslag)
 }
 
-// Result text for overviews, e.g. '6 - 3', 'Forfait team 1: 0 - 5', 'One player absent (Ann)', 'Both teams absent'.
+// Result text for overviews, e.g. '6 - 3', 'Forfait team 1: 0 - 5', 'Player absent, no substitute (Ann)', 'Both teams absent'.
 export function uitkomstTekst(match: MatchInfo) {
   const u = match.uitslag
   const score = u && heeftUitslag(u) ? `${u.games_team1} - ${u.games_team2}` : ''
@@ -94,7 +99,7 @@ export function uitkomstTekst(match: MatchInfo) {
     case 'forfait_team2': return `${uitkomstKort(match.status)}: ${score}`
     case 'speler_afwezig': {
       const speler = match.spelers.find(s => s.id === match.afwezig_speler_id)
-      return speler ? `One player absent (${speler.voornaam}): ${score}` : `One player absent: ${score}`
+      return speler ? `Player absent, no substitute (${speler.voornaam}): ${score}` : `Player absent, no substitute: ${score}`
     }
     case 'niet_gespeeld': return 'Both teams absent'
     default: return score
