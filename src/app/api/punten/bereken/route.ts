@@ -2,6 +2,11 @@ import { createClient as createAdmin } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireWedstrijdAccess } from '@/lib/api-auth'
 
+// Always run on request and never serve Supabase data from a cache.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
 const UITKOMSTEN_ZONDER_SCORE = ['forfait_team1', 'forfait_team2', 'speler_afwezig', 'niet_gespeeld']
 
 interface GroepSpelerRij { speler_id: string; is_invaller: boolean | null; afwezig: boolean | null; vervangt_speler_id: string | null }

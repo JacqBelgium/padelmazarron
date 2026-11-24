@@ -3,6 +3,11 @@ import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 import { vandaagBrussel } from '@/lib/schema-planning'
 
+// Always run on request and never serve Supabase data from a cache.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -69,15 +74,15 @@ export async function GET(request: Request) {
   const { count: clubs } = await admin.from('clubs').select('*', { count: 'exact', head: true })
   const { count: spelers } = await admin.from('spelers').select('*', { count: 'exact', head: true })
   const { count: wedstrijden } = await admin.from('wedstrijden').select('*', { count: 'exact', head: true })
-  const { count: sets } = await admin.from('sets').select('*', { count: 'exact', head: true })
+  const { count: sets } = await admin.from('sets').select('*', { count: 'exact', head: true }).not('games_team1', 'is', null)
 
   // Email sturen
   await resend.emails.send({
     from: 'noreply@pickmynumbers.eu',
     to: 'jacqvandersteen@gmail.com',
-    subject: `RacketComp Weekly Update — ${new Date().toLocaleDateString('nl-BE')}`,
+    subject: `RacketComp Daily Update — ${new Date().toLocaleDateString('nl-BE')}`,
     html: `
-      <h2>RacketComp Weekly Update</h2>
+      <h2>RacketComp Daily Update</h2>
       <p>Database is actief en gezond ✓</p>
       <table>
         <tr><td><strong>Clubs:</strong></td><td>${clubs}</td></tr>
@@ -87,7 +92,7 @@ export async function GET(request: Request) {
         <tr><td><strong>Expired invitations:</strong></td><td>${verlopenUitnodigingen ?? 'error'}</td></tr>
         <tr><td><strong>Rounds opened:</strong></td><td>${geopendeRondes ?? 'error'}</td></tr>
       </table>
-      <p>Volgende update over 3-4 dagen.</p>
+      <p>Volgende update morgen.</p>
       <p><a href="https://racketcomp.eu">racketcomp.eu</a></p>
     `,
   })

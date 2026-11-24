@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { requireWedstrijdAccess } from '@/lib/api-auth'
 
+// Always run on request and never serve Supabase data from a cache.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {

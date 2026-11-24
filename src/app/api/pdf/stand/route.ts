@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { korteAchternamenVoorWedstrijd, weergaveNaam } from '@/lib/korte-naam'
 import { geenTotalen, rangschik, telPunten, type PuntRij } from '@/lib/stand'
 
+// Always run on request and never serve Supabase data from a cache.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const wedstrijd_id = searchParams.get('wedstrijd_id')

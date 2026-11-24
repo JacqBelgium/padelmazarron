@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { korteAchternamenVoorWedstrijd, weergaveNaam } from '@/lib/korte-naam'
 import { isUitkomst } from '@/lib/ronde-weergave'
 
+// Always run on request and never serve Supabase data from a cache.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
 // Public schedule. Only abbreviated names are returned (first name + shortened surname), never a full surname,
 // and no results: per match only its outcome (status), when it has one. Unless the organiser shows missed rounds
 // publicly (toon_forfaits_publiek), every outcome is reported as the neutral 'afgerond'.

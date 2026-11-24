@@ -5,6 +5,11 @@ import { genereerWhist, wijsCaptainsToe } from '@/lib/schema-whist'
 import { parseDatum, rondeDatums, schud, vandaagBrussel } from '@/lib/schema-planning'
 import { requireWedstrijdAccess } from '@/lib/api-auth'
 
+// Always run on request and never serve Supabase data from a cache.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
 const standaardRondeDuurDagen = 7
 
 export async function POST(request: NextRequest) {

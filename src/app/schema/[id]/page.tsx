@@ -45,7 +45,7 @@ export default function PubliekSchemaPage({ params }: { params: { id: string } }
   const [laden, setLaden] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/pdf/schema?wedstrijd_id=${params.id}`)
+    fetch(`/api/pdf/schema?wedstrijd_id=${params.id}`, { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
         setNaam(data.wedstrijd)

@@ -24,7 +24,7 @@ export default function PubliekeStandPage({ params }: { params: { id: string } }
   const [gestart, setGestart] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/pdf/stand?wedstrijd_id=${params.id}`)
+    fetch(`/api/pdf/stand?wedstrijd_id=${params.id}`, { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
         setNaam(data.wedstrijd)
