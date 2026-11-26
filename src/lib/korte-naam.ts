@@ -89,11 +89,13 @@ async function alleRijenIn<T>(waarden: string[], query: (blok: string[], van: nu
   return rijen
 }
 
-// Alle spelers van een wedstrijd (deelnames + ingedeelde spelers, ook invallers), zodat
-// schema en stand dezelfde verkortingen tonen.
+// Verkortingen voor de deelnemers van een wedstrijd: bevestigde deelnames plus de geplande spelers
+// uit de sets-rijen. Invallers tellen bewust niet mee, zodat een invaller nooit verandert hoe de naam
+// van een deelnemer eruitziet. Een invaller zonder eigen verkorting toont alleen de voornaam.
 export async function korteAchternamenVoorWedstrijd(admin: SupabaseClient, wedstrijdId: string) {
   const deelnames = await alleRijen<{ speler_id: string }>((van, tot) => admin
-    .from('deelnames').select('speler_id').eq('wedstrijd_id', wedstrijdId).order('id').range(van, tot))
+    .from('deelnames').select('speler_id').eq('wedstrijd_id', wedstrijdId).eq('uitnodiging_status', 'bevestigd')
+    .order('id').range(van, tot))
 
   const rondes = await alleRijen<{ id: string }>((van, tot) => admin
     .from('rondes').select('id').eq('wedstrijd_id', wedstrijdId).order('id').range(van, tot))
@@ -101,10 +103,15 @@ export async function korteAchternamenVoorWedstrijd(admin: SupabaseClient, wedst
   const groepen = await alleRijenIn<{ id: string }>(rondes.map(r => r.id), (blok, van, tot) => admin
     .from('groepen').select('id').in('ronde_id', blok).order('id').range(van, tot))
 
-  const groepSpelers = await alleRijenIn<{ speler_id: string }>(groepen.map(g => g.id), (blok, van, tot) => admin
-    .from('groep_spelers').select('speler_id').in('groep_id', blok).order('id').range(van, tot))
+  type SetSpelers = { team1_speler1_id: string; team1_speler2_id: string; team2_speler1_id: string; team2_speler2_id: string }
+  const sets = await alleRijenIn<SetSpelers>(groepen.map(g => g.id), (blok, van, tot) => admin
+    .from('sets').select('team1_speler1_id, team1_speler2_id, team2_speler1_id, team2_speler2_id')
+    .in('groep_id', blok).order('id').range(van, tot))
 
-  const spelerIds = [...new Set([...deelnames, ...groepSpelers].map(r => r.speler_id))]
+  const spelerIds = [...new Set([
+    ...deelnames.map(d => d.speler_id),
+    ...sets.flatMap(s => [s.team1_speler1_id, s.team1_speler2_id, s.team2_speler1_id, s.team2_speler2_id]),
+  ].filter(Boolean))]
   const spelers = await alleRijenIn<SpelerNaam>(spelerIds, (blok, van, tot) => admin
     .from('spelers').select('id, voornaam, achternaam').in('id', blok).order('id').range(van, tot))
 

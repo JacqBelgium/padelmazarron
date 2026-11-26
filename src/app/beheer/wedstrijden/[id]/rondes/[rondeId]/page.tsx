@@ -8,6 +8,7 @@ import TenantNav from '@/components/TenantNav'
 import { useTenantContext } from '@/lib/TenantContext'
 import { formatDatum, heeftUitkomst, isUitkomst, kanUitslagenInvoeren, laadMatches, periode, rondeStatusLabel, teamsTekst, uitkomstLabel, type MatchInfo, type Uitkomst } from '@/lib/ronde-weergave'
 import { STANDAARD_FORFAIT_GAMES } from '@/lib/wedstrijd-instellingen'
+import InvallerBeheer from '@/components/InvallerBeheer'
 
 interface RondeInfo { id: string; wedstrijd_id: string; ronde_nummer: number; status: string; start_datum: string | null; eind_datum: string | null }
 interface VolgendeRonde { id: string; status: string; heeftUitslagen: boolean }
@@ -210,7 +211,7 @@ export default function RondeUitslagPage() {
       okTekst = 'Saved: both teams absent.'
     } else {
       const f = leesGames(invoer.forfait)
-      if (f === null || Number.isNaN(f)) { meld(false, `Games for the other team must be a whole number from 0 to ${MAX_GAMES}.`); return }
+      if (f === null || Number.isNaN(f)) { meld(false, `${invoer.uitkomst === 'speler_afwezig' ? 'Games for the other players' : 'Games for the other team'} must be a whole number from 0 to ${MAX_GAMES}.`); return }
       if (invoer.uitkomst === 'forfait_team1') { setRij = metInvoerder(0, f); okTekst = 'Saved: team 1 forfait.' }
       else if (invoer.uitkomst === 'forfait_team2') { setRij = metInvoerder(f, 0); okTekst = 'Saved: team 2 forfait.' }
       else {
@@ -326,7 +327,7 @@ export default function RondeUitslagPage() {
         {matches.map(match => (
           <MatchFormulier
             // Remount when the stored result changes, so the inputs show the saved values.
-            key={`${match.id}:${match.status ?? ''}:${match.afwezig_speler_id ?? ''}:${match.uitslag?.games_team1 ?? ''}:${match.uitslag?.games_team2 ?? ''}`}
+            key={`${match.id}:${match.status ?? ''}:${match.afwezig_speler_id ?? ''}:${match.uitslag?.games_team1 ?? ''}:${match.uitslag?.games_team2 ?? ''}:${match.invallers.map(i => i.speler_id).join(',')}`}
             match={match}
             forfaitGames={forfaitGames}
             bewerkbaar={bewerkbaar}
@@ -334,6 +335,7 @@ export default function RondeUitslagPage() {
             opslaan={opslaan === match.id}
             melding={meldingen[match.id]}
             onOpslaan={invoer => slaUitkomstOp(match, invoer)}
+            onInvallerGewijzigd={laadData}
           />
         ))}
       </div>
@@ -359,7 +361,7 @@ function opgeslagenForfait(match: MatchInfo, standaard: number) {
   return standaard
 }
 
-function MatchFormulier({ match, forfaitGames, bewerkbaar, uitgeschakeld, opslaan, melding, onOpslaan }: {
+function MatchFormulier({ match, forfaitGames, bewerkbaar, uitgeschakeld, opslaan, melding, onOpslaan, onInvallerGewijzigd }: {
   match: MatchInfo
   forfaitGames: number
   bewerkbaar: boolean
@@ -367,6 +369,7 @@ function MatchFormulier({ match, forfaitGames, bewerkbaar, uitgeschakeld, opslaa
   opslaan: boolean
   melding?: { ok: boolean; tekst: string }
   onOpslaan: (invoer: UitkomstInvoer) => void
+  onInvallerGewijzigd: () => Promise<void>
 }) {
   const opgeslagenUitkomst: Uitkomst = isUitkomst(match.status) ? match.status : 'gespeeld'
   const gespeeld = opgeslagenUitkomst === 'gespeeld'
@@ -377,6 +380,13 @@ function MatchFormulier({ match, forfaitGames, bewerkbaar, uitgeschakeld, opslaa
   const [afwezige, setAfwezige] = useState(match.afwezig_speler_id ?? '')
   const { primaryColor, secondaryColor } = useTenantContext()
   const opgeslagen = heeftUitkomst(match)
+  // Substitute links: only on an editable page (kanUitslagenInvoeren via bewerkbaar), and only while the match
+  // has no result or the outcome 'Player absent, no substitute' (which assigning a substitute replaces).
+  const metInvaller = match.invallers.length > 0
+  const magInvallerToewijzen = bewerkbaar && !uitgeschakeld && (!opgeslagen || match.status === 'speler_afwezig')
+  const magInvallerVerwijderen = bewerkbaar && !uitgeschakeld && !opgeslagen
+  // With a substitute the outcome 'Player absent, no substitute' is not offered (unless it is the current value).
+  const uitkomstOpties = UITKOMST_OPTIES.filter(o => !(metInvaller && o.waarde === 'speler_afwezig' && uitkomst !== 'speler_afwezig'))
   const label = uitkomstLabel(match.status)
   const inputStyle = {
     width: '60px', padding: '6px 8px', border: '1px solid #E5E7EB', borderRadius: '6px',
@@ -397,7 +407,7 @@ function MatchFormulier({ match, forfaitGames, bewerkbaar, uitgeschakeld, opslaa
 
   const forfaitVeld = (
     <div style={rij}>
-      <label style={tekstStijl} htmlFor={`f-${match.id}`}>Games for the other team</label>
+      <label style={tekstStijl} htmlFor={`f-${match.id}`}>{uitkomst === 'speler_afwezig' ? 'Games for the other players' : 'Games for the other team'}</label>
       <input id={`f-${match.id}`} type="number" inputMode="numeric" min={0} max={MAX_GAMES} step={1} value={forfait} onChange={e => setForfait(e.target.value)}
         readOnly={!bewerkbaar} disabled={uitgeschakeld} style={inputStyle} />
     </div>
@@ -406,11 +416,12 @@ function MatchFormulier({ match, forfaitGames, bewerkbaar, uitgeschakeld, opslaa
   return (
     <div style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
       <div style={{ background: primaryColor, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: secondaryColor, fontWeight: 700, fontSize: '13px' }}>Match {match.baan_nummer}</span>
+        <span style={{ color: secondaryColor, fontWeight: 700, fontSize: '13px' }}>Match {match.baan_nummer}{metInvaller ? ' (with substitute)' : ''}</span>
         {label && <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', fontWeight: 600 }}>{label}</span>}
       </div>
       <div style={{ padding: '14px 20px' }}>
         <p style={{ fontSize: '14px', color: '#374151', margin: '0 0 12px 0' }}>{teamsTekst(match)}</p>
+        <InvallerBeheer match={match} magToewijzen={magInvallerToewijzen} magVerwijderen={magInvallerVerwijderen} onGewijzigd={onInvallerGewijzigd} />
         {u ? (
           <form
             onSubmit={e => { e.preventDefault(); onOpslaan({ uitkomst, g1, g2, forfait, afwezige }) }}
@@ -421,7 +432,7 @@ function MatchFormulier({ match, forfaitGames, bewerkbaar, uitgeschakeld, opslaa
               <select id={`uitkomst-${match.id}`} value={uitkomst} onChange={e => setUitkomst(e.target.value as Uitkomst)}
                 disabled={!bewerkbaar || uitgeschakeld}
                 style={{ padding: '6px 8px', border: '1px solid #E5E7EB', borderRadius: '6px', fontSize: '14px', background: bewerkbaar ? '#ffffff' : '#F9FAFB' }}>
-                {UITKOMST_OPTIES.map(o => <option key={o.waarde} value={o.waarde}>{o.label}</option>)}
+                {uitkomstOpties.map(o => <option key={o.waarde} value={o.waarde}>{o.label}</option>)}
               </select>
             </div>
 
@@ -452,6 +463,7 @@ function MatchFormulier({ match, forfaitGames, bewerkbaar, uitgeschakeld, opslaa
                   ))}
                 </fieldset>
                 {forfaitVeld}
+                <p style={{ ...tekstStijl, margin: 0 }}>The three other players each get these games. The absent player gets 0 games and an F.</p>
               </>
             )}
 

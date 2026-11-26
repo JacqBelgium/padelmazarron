@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { genereerWhist, wijsCaptainsToe } from '@/lib/schema-whist'
 import { parseDatum, rondeDatums, schud, vandaagBrussel } from '@/lib/schema-planning'
 import { requireWedstrijdAccess } from '@/lib/api-auth'
+import { foutCode } from '@/lib/foutcode'
 
 // Always run on request and never serve Supabase data from a cache.
 export const dynamic = 'force-dynamic'
@@ -112,10 +113,10 @@ export async function POST(request: NextRequest) {
     // deleted again (groepen, groep_spelers and sets follow by cascade), so no half schedule remains.
     const aangemaakteRondeIds: string[] = []
     const terugdraaien = async (stap: string, fout: unknown) => {
-      console.error(`Schema generatie fout bij ${stap}:`, fout)
+      console.error(`Schema generatie fout bij ${stap}:`, foutCode(fout))
       if (aangemaakteRondeIds.length > 0) {
         const { error: rollbackFout } = await admin.from('rondes').delete().in('id', aangemaakteRondeIds)
-        if (rollbackFout) console.error('Schema rollback fout:', rollbackFout)
+        if (rollbackFout) console.error('Schema rollback fout:', foutCode(rollbackFout))
       }
       // The previous rounds were already deleted; the competition is left without a schedule, never with half of one.
       return NextResponse.json({ fout: 'The schedule could not be saved. Please try again.' }, { status: 500 })
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Schema generatie fout:', error)
+    console.error('Schema generatie fout:', foutCode(error))
     return NextResponse.json({ fout: 'Interne serverfout' }, { status: 500 })
   }
 }

@@ -20,7 +20,11 @@ export interface MatchInfo {
   uitslag: MatchUitslag | null
   // The player marked groep_spelers.afwezig for this match ('Player absent, no substitute'), or null.
   afwezig_speler_id: string | null
+  // Substitutes (groep_spelers.is_invaller): speler_id = the substitute, vervangt_speler_id = the planned player.
+  invallers: Invaller[]
 }
+
+export interface Invaller { speler_id: string; vervangt_speler_id: string | null }
 
 // Outcome of a match, stored in groepen.status. 'gepland' (or null) means no outcome yet.
 export const UITKOMSTEN = ['gespeeld', 'forfait_team1', 'forfait_team2', 'speler_afwezig', 'niet_gespeeld'] as const
@@ -113,7 +117,7 @@ export async function laadMatches(supabase: SupabaseClient, rondeIds: string[]):
     .from('groepen')
     .select(`
       id, ronde_id, baan_nummer, status, captain_speler_id,
-      groep_spelers(speler_id, afwezig, spelers(id, voornaam, achternaam)),
+      groep_spelers(speler_id, afwezig, is_invaller, vervangt_speler_id, spelers(id, voornaam, achternaam)),
       sets(id, set_nummer, team1_speler1_id, team1_speler2_id, team2_speler1_id, team2_speler2_id, games_team1, games_team2)
     `)
     .in('ronde_id', rondeIds)
@@ -136,9 +140,33 @@ export async function laadMatches(supabase: SupabaseClient, rondeIds: string[]):
       uitslag,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       afwezig_speler_id: (g.groep_spelers ?? []).find((gs: any) => gs.afwezig)?.speler_id ?? null,
+      // vervangt_speler_id is a plain id (no foreign key); names come from the players of the match.
+      invallers: (g.groep_spelers ?? [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((gs: any) => gs.is_invaller)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((gs: any) => ({ speler_id: gs.speler_id, vervangt_speler_id: gs.vervangt_speler_id ?? null })),
     }
   })
   return { matches, fout: null }
+}
+
+export function spelerNaam(match: MatchInfo, id: string | null | undefined) {
+  const speler = match.spelers.find(s => s.id === id)
+  return speler ? `${speler.voornaam} ${speler.achternaam}` : '?'
+}
+
+// The substitute of a planned player in this match, or null.
+export function invallerVoor(match: MatchInfo, geplandeSpelerId: string) {
+  return match.invallers.find(i => i.vervangt_speler_id === geplandeSpelerId) ?? null
+}
+
+// 'substitute: Sam Lee for Bob Smith' (several joined with '; '), or '' without substitutes.
+export function invallersTekst(match: MatchInfo) {
+  return match.invallers
+    .filter(i => i.vervangt_speler_id)
+    .map(i => `substitute: ${spelerNaam(match, i.speler_id)} for ${spelerNaam(match, i.vervangt_speler_id)}`)
+    .join('; ')
 }
 
 // 'A & B vs C & D', with '(captain)' behind the captain's name.

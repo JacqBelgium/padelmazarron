@@ -1,6 +1,7 @@
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireWedstrijdAccess } from '@/lib/api-auth'
+import { foutCode } from '@/lib/foutcode'
 
 // Always run on request and never serve Supabase data from a cache.
 export const dynamic = 'force-dynamic'
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       .eq('groepen.rondes.wedstrijd_id', wedstrijd_id)
 
     if (setsError) {
-      console.error('Sets query error:', setsError)
+      console.error('Sets query error:', foutCode(setsError))
       return NextResponse.json({ fout: 'Fout bij ophalen sets' }, { status: 500 })
     }
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     // Verwijder bestaande punten
     const { error: wisFout } = await admin.from('punten').delete().eq('wedstrijd_id', wedstrijd_id)
     if (wisFout) {
-      console.error('Delete punten error:', wisFout)
+      console.error('Delete punten error:', foutCode(wisFout))
       return NextResponse.json({ fout: 'Fout bij wissen punten' }, { status: 500 })
     }
 
@@ -91,7 +92,25 @@ export async function POST(request: NextRequest) {
       // F staat in de sets-rij van de match (per match aanpasbaar).
       const forfait = (waarde: number | null) => waarde ?? 0
 
+      // Invaller die een geplande speler vervangt (de sets-rij blijft de geplande teams).
+      const invallerVoor = (spelerId: string) =>
+        groepSpelers.find(gs => gs.vervangt_speler_id === spelerId && gs.is_invaller)?.speler_id ?? null
+
       const punt = (spelerId: string, games: number, gewonnen: boolean, afwezig: boolean) => {
+        const vervanger = invallerVoor(spelerId)
+        if (vervanger) {
+          // De geplande speler X: 0 games, geen gewonnen match, afwezig. De invaller krijgt wat X zou krijgen,
+          // als invaller (telt niet mee in de stand) en niet afwezig.
+          nieuwePunten.push({
+            wedstrijd_id, ronde_id: rondeId, speler_id: spelerId, set_id: set.id,
+            games_gewonnen: 0, set_gewonnen: false, is_invaller: false, afwezig: true,
+          })
+          nieuwePunten.push({
+            wedstrijd_id, ronde_id: rondeId, speler_id: vervanger, set_id: set.id,
+            games_gewonnen: games, set_gewonnen: gewonnen, is_invaller: true, afwezig: false,
+          })
+          return
+        }
         nieuwePunten.push({
           wedstrijd_id,
           ronde_id: rondeId,
@@ -134,7 +153,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Vervangen spelers (een invaller verwijst ernaar via vervangt_speler_id) krijgen een afwezig-rij met 0 games.
+      // Vervangen spelers die niet in de sets-rij staan (oudere data) krijgen alleen een afwezig-rij met 0 games;
+      // geplande spelers met een invaller zijn hierboven al verwerkt.
       const inMatch = new Set([...team1, ...team2])
       const vervangen = new Set(groepSpelers.map(gs => gs.vervangt_speler_id).filter((id): id is string => !!id))
       for (const id of vervangen) {
@@ -151,7 +171,7 @@ export async function POST(request: NextRequest) {
     if (nieuwePunten.length > 0) {
       const { error: insertError } = await admin.from('punten').insert(nieuwePunten)
       if (insertError) {
-        console.error('Insert punten error:', insertError)
+        console.error('Insert punten error:', foutCode(insertError))
         return NextResponse.json({ fout: 'Fout bij opslaan punten' }, { status: 500 })
       }
     }
@@ -163,7 +183,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Punten berekening fout:', error)
+    console.error('Punten berekening fout:', foutCode(error))
     return NextResponse.json({ fout: 'Interne serverfout' }, { status: 500 })
   }
 }

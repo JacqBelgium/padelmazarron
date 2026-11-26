@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     .from('groepen')
     .select(`
       id, ronde_id, baan_nummer, status, captain_speler_id,
-      groep_spelers(spelers(id, voornaam)),
+      groep_spelers(is_invaller, spelers(id, voornaam)),
       sets(set_nummer, team1_speler1_id, team1_speler2_id, team2_speler1_id, team2_speler2_id)
     `)
     .in('ronde_id', rondeIds)
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
   const voornamen = new Map<string, string>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const g of (groepenData ?? []) as any[]) {
-    for (const gs of g.groep_spelers ?? []) if (gs.spelers) voornamen.set(gs.spelers.id, gs.spelers.voornaam)
+    for (const gs of g.groep_spelers ?? []) if (gs.spelers && !gs.is_invaller) voornamen.set(gs.spelers.id, gs.spelers.voornaam)
   }
   const naam = (id: string) => weergaveNaam(voornamen.get(id) ?? '?', korteNamen.get(id))
 
@@ -78,7 +78,8 @@ export async function GET(request: NextRequest) {
           // Existing fields
           baan: g.baan_nummer,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          spelers: (g.groep_spelers ?? []).filter((gs: any) => gs.spelers).map((gs: any) => naam(gs.spelers.id)),
+          // Substitutes (is_invaller) are never listed; team1/team2 are always the planned teams.
+          spelers: (g.groep_spelers ?? []).filter((gs: any) => gs.spelers && !gs.is_invaller).map((gs: any) => naam(gs.spelers.id)),
           // New fields
           team1: set ? [speler(set.team1_speler1_id), speler(set.team1_speler2_id)] : [],
           team2: set ? [speler(set.team2_speler1_id), speler(set.team2_speler2_id)] : [],

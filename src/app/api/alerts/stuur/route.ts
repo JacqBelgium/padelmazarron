@@ -2,6 +2,7 @@ import { createClient as createAdmin } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { requireWedstrijdAccess } from '@/lib/api-auth'
+import { foutCode } from '@/lib/foutcode'
 
 // Always run on request and never serve Supabase data from a cache.
 export const dynamic = 'force-dynamic'
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Alert fout:', error)
+    console.error('Alert fout:', foutCode(error))
     return NextResponse.json({ fout: 'Interne serverfout' }, { status: 500 })
   }
 }

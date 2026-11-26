@@ -23,6 +23,7 @@ export default function WedstrijdBeheerPage() {
   const [geselecteerd, setGeselecteerd] = useState<Set<string>>(new Set())
   const [instellingen, setInstellingen] = useState<InstellingenWaarden>(legeInstellingen)
   const [bestaandeRondes, setBestaandeRondes] = useState(0)
+  const [naam, setNaam] = useState('')
   const [laden, setLaden] = useState(true)
   const [opslaan, setOpslaan] = useState(false)
   const [bericht, setBericht] = useState('')
@@ -44,7 +45,7 @@ export default function WedstrijdBeheerPage() {
     ])
     setBestaandeRondes(rondesAantal ?? 0)
     setWedstrijd(w)
-    if (w) setInstellingen(waardenUitWedstrijd(w))
+    if (w) { setInstellingen(waardenUitWedstrijd(w)); setNaam(w.naam ?? '') }
     setAlleSpelers(s ?? [])
     setDeelnames((d ?? []) as DeelnameMetSpeler[])
     setGeselecteerd(new Set((d ?? []).map((x: Deelname) => x.speler_id)))
@@ -88,15 +89,18 @@ export default function WedstrijdBeheerPage() {
     e.preventDefault()
     if (isDemo) return
     setFout(''); setBericht('')
+    // Same rule as when creating: the name is required (no length limit there either).
+    if (!naam.trim()) { setFout('Enter a competition name.'); return }
 
-    // After the start only the forfeit settings can change: forfeit games (default for new forfeits) and showing F publicly.
+    // After the start only the name and the forfeit settings can change: forfeit games (default for new
+    // forfeits) and showing F publicly.
     if (!isConcept) {
       const forfait = leesForfaitGames(instellingen.forfaitGames)
       if ('fout' in forfait) { setFout(forfait.fout); return }
       setOpslaan(true)
-      const { error } = await supabase.from('wedstrijden').update({ forfait_games: forfait.forfait_games, toon_forfaits_publiek: instellingen.toonForfaitsPubliek }).eq('id', id)
+      const { error } = await supabase.from('wedstrijden').update({ naam, forfait_games: forfait.forfait_games, toon_forfaits_publiek: instellingen.toonForfaitsPubliek }).eq('id', id)
       if (error) setFout(`Error: ${error.message}`)
-      else { setBericht('✓ Forfait settings saved.'); await laadData() }
+      else { setBericht('✓ Settings saved.'); await laadData() }
       setOpslaan(false)
       return
     }
@@ -108,7 +112,7 @@ export default function WedstrijdBeheerPage() {
       return
     }
     setOpslaan(true)
-    const { error } = await supabase.from('wedstrijden').update(resultaat.payload).eq('id', id)
+    const { error } = await supabase.from('wedstrijden').update({ ...resultaat.payload, naam }).eq('id', id)
     if (error) setFout(`Error: ${error.message}`)
     else { setBericht('✓ Settings saved.'); await laadData() }
     setOpslaan(false)
@@ -272,7 +276,7 @@ export default function WedstrijdBeheerPage() {
         <form onSubmit={slaInstellingenOp} style={{ background: '#ffffff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h2 style={{ color: primaryColor, fontWeight: 800, fontSize: '15px', margin: 0 }}>Settings</h2>
-            {!isConcept && <span style={{ color: '#9CA3AF', fontSize: '12px' }}>Only the forfait settings can be changed after the competition has started</span>}
+            {!isConcept && <span style={{ color: '#9CA3AF', fontSize: '12px' }}>Only the name and the forfait settings can be changed after the competition has started</span>}
           </div>
           <WedstrijdInstellingenVelden
             waarden={instellingen}
@@ -280,11 +284,14 @@ export default function WedstrijdBeheerPage() {
             alleenLezen={!isConcept || isDemo}
             bestaandeRondes={bestaandeRondes}
             forfaitAlleenLezen={isDemo}
+            naam={naam}
+            onNaamChange={waarde => { setNaam(waarde); setBericht('') }}
+            naamAlleenLezen={isDemo}
             primaryColor={primaryColor}
           />
           {!isDemo && (
             <button type="submit" disabled={opslaan} style={{ marginTop: '20px', background: '#1F5C99', color: '#ffffff', padding: '10px 24px', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
-              {opslaan ? 'Saving...' : isConcept ? 'Save settings' : 'Save forfait settings'}
+              {opslaan ? 'Saving...' : 'Save settings'}
             </button>
           )}
         </form>

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { foutCode } from '@/lib/foutcode'
 
 // Always run on request and never serve Supabase data from a cache.
 export const dynamic = 'force-dynamic'
@@ -47,9 +48,9 @@ function escapeHtml(value: string) {
     .replace(/'/g, '&#39;')
 }
 
+// Only the error code is logged; messages can contain personal data (e.g. an e-mail address).
 function errorSummary(error: unknown) {
-  const { message, code } = (error ?? {}) as { message?: string; code?: string }
-  return { message, code }
+  return foutCode(error)
 }
 
 function missingFields(fields: Record<string, unknown>) {
@@ -209,7 +210,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (emailResponse.error) {
-        console.error('clubs/onboard Resend error sending welcome mail', { resendError: emailResponse.error })
+        console.error('clubs/onboard Resend error sending welcome mail', foutCode(emailResponse.error))
         throw new Error(emailResponse.error.message || 'E-mail kon niet worden verzonden')
       }
 
@@ -223,7 +224,7 @@ export async function POST(request: NextRequest) {
         try {
           await admin.auth.admin.deleteUser(authUserId)
         } catch (deleteUserError) {
-          console.error('Kon auth user niet terugdraaien:', deleteUserError)
+          console.error('Kon auth user niet terugdraaien:', foutCode(deleteUserError))
         }
       }
 
@@ -231,17 +232,16 @@ export async function POST(request: NextRequest) {
         try {
           await admin.from('clubs').delete().eq('id', clubId)
         } catch (deleteClubError) {
-          console.error('Kon club niet terugdraaien:', deleteClubError)
+          console.error('Kon club niet terugdraaien:', foutCode(deleteClubError))
         }
       }
 
-      const errorMessage = error instanceof Error ? error.message : 'Onbekende fout'
-      console.error('Onboarding fout:', errorMessage)
+      console.error('Onboarding fout:', foutCode(error))
 
       return NextResponse.json({ fout: 'Aanmaken van club en gebruiker is mislukt' }, { status: 500 })
     }
   } catch (error) {
-    console.error('Onboarding request fout:', error)
+    console.error('Onboarding request fout:', foutCode(error))
     return NextResponse.json({ fout: 'Interne serverfout' }, { status: 500 })
   }
 }

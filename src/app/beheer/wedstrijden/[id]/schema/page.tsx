@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import TenantNav from '@/components/TenantNav'
 import { useTenantContext } from '@/lib/TenantContext'
 import { useDemo } from '@/lib/useDemo'
-import { kanUitslagenInvoeren, laadMatches, periode, rondeStatusLabel, teamsTekst, uitkomstTekst, type MatchInfo } from '@/lib/ronde-weergave'
+import { invallersTekst, kanUitslagenInvoeren, laadMatches, periode, rondeStatusLabel, teamsTekst, uitkomstTekst, type MatchInfo } from '@/lib/ronde-weergave'
 
 interface RondeInfo {
   id: string; ronde_nummer: number; status: string
@@ -118,7 +118,12 @@ export default function SchemaOverzichtPage() {
               {ronde.matches.map((match, i) => (
                 <div key={match.id} style={{ display: 'grid', gridTemplateColumns: '90px 1fr auto', gap: '12px', padding: '12px 20px', borderBottom: '1px solid #F9FAFB', background: i % 2 === 0 ? '#ffffff' : '#FAFAFA', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: '#1F5C99' }}>Match {match.baan_nummer}</span>
-                  <span style={{ fontSize: '14px', color: '#374151' }}>{teamsTekst(match)}</span>
+                  <span style={{ fontSize: '14px', color: '#374151' }}>
+                    {teamsTekst(match)}
+                    {match.invallers.length > 0 && (
+                      <span style={{ display: 'block', fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>{invallersTekst(match)}</span>
+                    )}
+                  </span>
                   <span style={{ fontSize: '14px', fontWeight: 700, color: !match.status || match.status === 'gepland' || match.status === 'gespeeld' ? '#166534' : '#9A3412', whiteSpace: 'nowrap' }}>
                     {uitkomstTekst(match)}
                   </span>

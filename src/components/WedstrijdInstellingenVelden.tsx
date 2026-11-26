@@ -22,11 +22,15 @@ type Props = {
   forfaitAlleenLezen?: boolean
   // Number of rounds that already exist; when above 0 the summary shows it instead of the computed number.
   bestaandeRondes?: number
+  // Optional competition name field (competition page). It can stay editable after the start.
+  naam?: string
+  onNaamChange?: (naam: string) => void
+  naamAlleenLezen?: boolean
   primaryColor: string
 }
 
 // Settings fields with a read-only summary of the number of rounds and the computed end date.
-export default function WedstrijdInstellingenVelden({ waarden, onChange, alleenLezen = false, forfaitAlleenLezen = alleenLezen, bestaandeRondes = 0, primaryColor }: Props) {
+export default function WedstrijdInstellingenVelden({ waarden, onChange, alleenLezen = false, forfaitAlleenLezen = alleenLezen, bestaandeRondes = 0, naam, onNaamChange, naamAlleenLezen = alleenLezen, primaryColor }: Props) {
   const inputStyle = {
     width: '100%', padding: '12px 16px',
     border: '1px solid #E5E7EB', borderRadius: '8px',
@@ -48,6 +52,13 @@ export default function WedstrijdInstellingenVelden({ waarden, onChange, alleenL
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start' }}>
       <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+        {naam !== undefined && (
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle} htmlFor="wedstrijd_naam">Competition name</label>
+            <input id="wedstrijd_naam" type="text" value={naam} onChange={e => onNaamChange?.(e.target.value)}
+              style={{ ...inputStyle, background: naamAlleenLezen ? '#F9FAFB' : '#ffffff' }} required disabled={naamAlleenLezen} />
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '20px' }}>
           <div>
             <label style={labelStyle} htmlFor="datum_van">Start date</label>
@@ -68,7 +79,7 @@ export default function WedstrijdInstellingenVelden({ waarden, onChange, alleenL
             <select id="aantal_rondes" value={waarden.aantalRondes.trim()} onChange={e => onChange('aantalRondes', e.target.value)} style={inputStyle} disabled={alleenLezen}>
               {/* Empty value = automatic (participants minus 1), exactly like the empty field before. */}
               <option value="">{max > 1 ? `Automatic (${max - 1} rounds)` : 'Automatic'}</option>
-              {rondeOpties.map(n => <option key={n} value={String(n)}>{n} rounds</option>)}
+              {rondeOpties.map(n => <option key={n} value={String(n)}>{n === 1 ? '1 round' : `${n} rounds`}</option>)}
             </select>
           </div>
           <div>
